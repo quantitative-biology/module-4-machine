@@ -1,10 +1,4 @@
----
-#title: "5 Machine Learning"
-#author: "Kim Cuddington"
-date: "05/07/2021"
-output:
-  html_document: default
----
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE,kableExtra.auto_format = FALSE)
@@ -76,7 +70,7 @@ Substituting in our fitted values from the logistic regression, we have:
 $$p(y)=\frac{e^{`r logcoefs[1,1]` + `r logcoefs[2,1]` (12)}}{1+e^{`r logcoefs[1,1]` + `r logcoefs[2,1]`(12)}}=`r round((exp(logcoefs[1,1]+logcoefs[2,1]*12))/(1+exp(logcoefs[1,1]+logcoefs[2,1]*12)),2)`.$$ 
 The value changes with temperature, so for an annual average temperature of 16°C that probability is `r round((exp(logcoefs[1,1]+logcoefs[2,1]*16))/(1+exp(logcoefs[1,1]+logcoefs[2,1]*16)),2)`, and so on.
 
-**Exercise 1**: Can you calculate this probability?
+#### Exercise 1: Can you calculate this probability?
 
 ### Measuring the performance of a binary classifier
 
@@ -130,7 +124,7 @@ spec=1-ctab[1,2]/(ctab[1,1]+ctab[1,2])
 ```
 This higher threshold gives us an error rate of `r round(err*100,0)`%, sensitivity of `r round(sens*100,0)`% and specificity of `r round(spec*100,0)`%, so not much improvement. 
 
-**Exercise 2**: Can you calculate these rates?
+#### Exercise 2: Can you calculate these rates?
 
 #### ROC and AUC
 
@@ -295,7 +289,7 @@ for(k in 1:nfolds) {
 
 
 
-**Exercise 3**: Logistic regression as a binary classifier
+#### Exercise 3: Logistic regression as a binary classifier
 
 Try to use logistic regression on your own, with a pre-existing dataset in the MASS package. Start by installing the MASS package, load the library and load the data. We'll be using the Pima.tr data in the MASS package, which describes risk factors for diabetes. Type help(Pima.tr) or ?Pima.tr to get a description of these data. You’ll notice that the “type” variable is our classifier and determines whether the patient has diabetes or not.
 
