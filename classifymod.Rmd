@@ -69,8 +69,7 @@ Substituting in our fitted values from the logistic regression, we have:
 $$p(y)=\frac{e^{`r logcoefs[1,1]` + `r logcoefs[2,1]` (12)}}{1+e^{`r logcoefs[1,1]` + `r logcoefs[2,1]`(12)}}=`r round((exp(logcoefs[1,1]+logcoefs[2,1]*12))/(1+exp(logcoefs[1,1]+logcoefs[2,1]*12)),2)`.$$ 
 The value changes with temperature, so for an average annual temperature of 16°C that probability is `r round((exp(logcoefs[1,1]+logcoefs[2,1]*16))/(1+exp(logcoefs[1,1]+logcoefs[2,1]*16)),2)`, and so on.
 
-#### Exercise 1: 
-Try this for yourself, see if you can use similar code in order to estimate the probability that a site with an average annual temperature of 18°C will be occupied by the invasive species.
+**Exercise 1** Try this for yourself, see if you can use similar code in order to estimate the probability that a site with an average annual temperature of 18°C will be occupied by the invasive species.
 
 ### Measuring the performance of a binary classifier
 
@@ -124,8 +123,7 @@ spec=1-ctab[1,2]/(ctab[1,1]+ctab[1,2])
 ```
 This higher threshold gives us an error rate of `r round(err*100,0)`%, sensitivity of `r round(sens*100,0)`% and specificity of `r round(spec*100,0)`%, so not much improvement. 
 
-#### Exercise 2: 
-Can you calculate the sensitivity and specificity for a threshold classification of 0.45?
+**Exercise 2**  Can you calculate the sensitivity and specificity for a threshold classification of 0.45?
 
 #### ROC and AUC
 
@@ -288,7 +286,7 @@ for(k in 1:nfolds) {
 
 
 
-#### Exercise 3: Logistic regression as a binary classifier
+**Exercise 3: Logistic regression as a binary classifier**
 
 Try to use logistic regression on your own, with a pre-existing dataset in the MASS package. Start by installing the MASS package, load the library and load the data. The dataset we will use has been previously divided into training (Pima.tr) and testing sets (Pima.te). The dataset describes risk factors for diabetes. Type help(Pima.tr) or ?Pima.tr to get a description. You’ll notice that the “type” variable is our classifier and determines whether the patient has diabetes or not.
 
@@ -529,9 +527,7 @@ The y-axis is a bit tricky to interpret (Fig. \@ref(fig:PEplot)). Since we are d
 
 Its worth noting that the default behavior of randomForest is to refuse to fit trees with missing predictors. You can, however, specify a few alternative arguments: the first is na.action = na.omit, which removes the rows with missing values outright. Another option is to use na.action = na.roughfix, which replaces missing values with the median (for continuous variables) or the most frequent level (for categorical variables). Missing responses are harder: you can either remove that row, or use the function rfImpute to impute values. The imputed values are the average of the non-missing observations, weighted by their proximity to non-missing observations (based on how often they fall in terminal nodes with those observations). rfImpute tends to give optimistic estimates of the OOB error.
 
-### Exercise #4
-
-See if you can construct a random forest that predicts diabetes in patients based on other indicators using the Pima.tr data as your training set and Pima.te as your test set. Report on the performance of your classifier.
+**Exercise 4** See if you can construct a random forest that predicts diabetes in patients based on other indicators using the Pima.tr data as your training set and Pima.te as your test set. Report on the performance of your classifier.
 
 ### Examples of tree-based methods used for classification
 
@@ -585,7 +581,7 @@ symbols(x=.63, y=.7, circles=.065, inches=F, add=T)
 
 ```
 
-## 
+
 Some of the information will be more important for producing the correct output, the machine learning algorithm then weights this type of information more heavily. During the process of training, the ANN determines the error between the prediction and the target output. The network then adjusts its the weight it gives to each type of information. Successive adjustments are made using a learning rule and will cause the neural network to produce output which is increasingly similar to the target output. After a sufficient number of these adjustments the training can be terminated based upon certain criteria (see below for more discussion about learning).
 
 Once an ann model has been fitted, to predict classification of novel data it, 
@@ -596,7 +592,7 @@ Once an ann model has been fitted, to predict classification of novel data it,
 
 The activation functions are used to map the input between the required values. For example, between 0 and 1 for probability predictions. There are many functions used such as sigmoid, tan hyperbolic, linear etc. I haven't shown it here, but a bias can also be applied to the data which allows you to shift the activation function curve up or down.
 
-Of course, like a human brain, there is more than on neuron in a network, so we have have a *layer* of neurons. In Fig @ref(fig:ann) we have a **feedforward neural network** which consists of 2 inputs, 1 hidden layer with 3 hidden neurons, and 1 final output. We could have decided to add another intermediate “hidden” layer between the input and the final output exactly in the same way. Then we would have had a neural network with 2 hidden layers. Or we could have chosen to stay with 1 hidden layer but to have more neurons in it (5 instead of 3, for example).The parallel processing of information by many neurons allows ANNs to deal with non-linearity easily. Not all the neural networks fit the template described above. There are different kinds of architectures, but the feedforward neural network (also called Multi Layer Perceptron) is really the first basic architecture to understand. 
+Of course, like a human brain, there is more than on neuron in a network, so we have have a *layer* of neurons. In Fig \@ref(fig:ann) we have a **feedforward neural network** which consists of 2 inputs, 1 hidden layer with 3 hidden neurons, and 1 final output. We could have decided to add another intermediate “hidden” layer between the input and the final output exactly in the same way. Then we would have had a neural network with 2 hidden layers. Or we could have chosen to stay with 1 hidden layer but to have more neurons in it (5 instead of 3, for example).The parallel processing of information by many neurons allows ANNs to deal with non-linearity easily. Not all the neural networks fit the template described above. There are different kinds of architectures, but the feedforward neural network (also called Multi Layer Perceptron) is really the first basic architecture to understand. 
 
 ```{r ann, fig.cap="Diagram of an artificial neural network", fig.alt="Artificial neural network", echo=FALSE}
 plot(0,type='n',axes=FALSE,ann=FALSE,xlim=c(-.05,.75), ylim=c(0,1.5))
@@ -604,9 +600,9 @@ plot(0,type='n',axes=FALSE,ann=FALSE,xlim=c(-.05,.75), ylim=c(0,1.5))
 for (i in 1:3) {
   if (i %in% c(2,3)) {
   symbols(y=0+(i/10)*4, x=.01, circles=.02, inches=F, add=T, bg=2)
-    arrows(.05,(i/10)*4,.36,.1+(2/10)*4,length=0.075, lwd=rnorm(1,2.,2))
-    arrows(.05,(i/10)*4,.36,.1+(3/10)*4,length=0.075, lwd=rnorm(1,2.,2))
-    arrows(.05,(i/10)*4,.36,-.7+(3/10)*4,length=0.075, lwd=rnorm(1,2.,2))
+    arrows(.05,(i/10)*4,.36,.1+(2/10)*4,length=0.075, lwd=1.2)
+    arrows(.05,(i/10)*4,.36,.1+(3/10)*4,length=0.075, lwd=1.2)
+    arrows(.05,(i/10)*4,.36,-.7+(3/10)*4,length=0.075, lwd=1.2)
   }
   
   symbols(y=.1+(i/10)*4, x=.4, circles=.02, inches=F, add=T, bg="lightgreen")
@@ -710,7 +706,7 @@ We've just provided a small sampler of classification methods here that will get
 
 We value your input! Please take the time to let us know how we might improve these materials. [Survey](https://forms.gle/vLkcZq7NxPb2ajTQ6)
 
-### Other literature cited
+## References
 Chawla, N. V., Bowyer, K. W., Hall, L. O., & Kegelmeyer, W. P. (2002). SMOTE: Synthetic Minority Over-sampling Technique. Journal of Artificial Intelligence Research, 16, 321–357. https://doi.org/10.1613/jair.953
 
 Fernández, A., García, S., Galar, M., Prati, R. C., Krawczyk, B., & Herrera, F. (2018). Learning from imbalanced data sets (Vol. 10). Springer. https://link.springer.com/content/pdf/10.1007/978-3-319-98074-4.pdf
@@ -721,8 +717,8 @@ Olden, J. D., & Jackson, D. A. (2002). Illuminating the “black box”: A rando
 
 Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). Learning representations by back-propagating errors. Nature, 323(6088), 533–536. https://doi.org/10.1038/323533a0
 
-### Answer Key
-**1\.** Once you have fitted your model, you can use the code
+## Answer Key
+**Exercise 1\.** Once you have fitted your model, you can use the code
 ```{r echo=TRUE}
 p18=round((exp(logcoefs[1,1]+logcoefs[2,1]*18))/(1+exp(logcoefs[1,1]+logcoefs[2,1]*18)),2)
 
@@ -730,7 +726,7 @@ p18=round((exp(logcoefs[1,1]+logcoefs[2,1]*18))/(1+exp(logcoefs[1,1]+logcoefs[2,
 
 to get the probability of occupancy at locations with a mean annual temperature of 18C of approximately `r p18`. Your value will vary slightly depending on the stochasticity from the random routines used to generate our simulated observations.
 
-**2\.** We first need to change the threshold for our classification, and then recalculate sensitivity and specificity for our results
+**Exercise 2\.** We first need to change the threshold for our classification, and then recalculate sensitivity and specificity for our results
 ```{r, echo=TRUE, comment=""}
 #determine model predictions based on a new threshold value
 logoccnew <- ifelse(glm.probs > 0.45, 1, 0)
@@ -748,7 +744,7 @@ specN=1-ctabnew[1,2]/(ctabnew[1,1]+ctabnew[1,2])
 
 Again, there will be a bit of variation in your exact result. We obtain a sensitivity of `r round(sensN,2)` and specificity of `r round(specN,2)`
 
-**3\.** To construct a logistic regression to determine if a patient has diabetes or not, first read in the the training dataset Pima.tr from the MASS package
+**Exercise 3\.** To construct a logistic regression to determine if a patient has diabetes or not, first read in the the training dataset Pima.tr from the MASS package
 
 ```{r, echo=TRUE, comment="",message=FALSE}
 library(MASS)
@@ -784,7 +780,7 @@ atab
 
 You should notice there there have been some misclassifications at 50%, and that the accuracy is only about `r round(sum(diag(atab))/sum(atab),2)`. See if another decision boundary (e.g., 75%) does any better, or use the *ROCit* library, or other R packages to calculate an optimal threshold or an overall performance across thresholds.
 
-**4\.**
+**Exercise  4\.**
 
 We've used the caret package to run our random forest to classify the Pima diabetes data using a kfold cross-validation procedure, given that the dataset is fairly small. We've even divided the data into training and testing data (i.e., this is a bit overkill, considering that random forest will calculate out of bag error all by itself).
 
