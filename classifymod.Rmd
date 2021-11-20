@@ -1,42 +1,42 @@
 
 
 ```{r setup, include=FALSE}
+rm(list=ls())
 knitr::opts_chunk$set(echo = FALSE,kableExtra.auto_format = FALSE)
 library(kableExtra)
 ```
 
 # Introduction to classification and machine learning
 
-In this module we will continue our exploration of techniques for multivariate data (see Module 4 on Clustering and ordination), but will pay more attention to machine learning approaches.  Classification is the task of assigning data objects, such as sites, species or images to predetermined classes. Determining what class of data object you have is a question that usually turns on multiple predictors. For example, to classify leaf images to different species, predictors such as size, shape and colour may be used.  If you have satellite data, you may need to classify the different pixels of the image as agricultural, forest, or urban. So for classification tasks our response variable, y, is qualitative or categorical (e.g., gender, species, land classification). 
+In this module we will continue our exploration of techniques for multivariate data (see [Module 3](#multi)  on Clustering and ordination), but will pay more attention to machine learning approaches.  Classification is the task of assigning data objects, such as sites, species or images to predetermined classes. Determining what class of data object you have is a question that usually turns on multiple predictors. For example, to classify leaf images to different species, predictors such as size, shape and colour may be used.  If you have satellite data, you may need to classify the different pixels of the image as agricultural, forest, or urban. So for classification tasks our response variable, y, is qualitative or categorical (e.g., gender, species, land classification). 
 
 There are many methods that can be employed for classification tasks ranging from logistic regression to random forest techniques. While some of these methods are classic multivariate methods, others, like random forest classifiers, are machine learning tasks. Machine learning is an application of artificial intelligence, which allows algorithms to become more accurate at predicting outcomes without being explicitly programmed to do so. When we fit a regression in the ordinary way, we specify the model ahead of time and determine if the model has good or bad fit. We might then modify our model to reduce prediction error. In machine learning, the algorithm itself completes the tasks of model specification, evaluation and improvement. Spooky!
 
-The main thing to remember about machine learning is that these methods develop their own models for prediction. For example, in image recognition, they might learn to identify images that contain different species of zooplankton by analyzing example images that have been previously labelled by the researcher. However, generally there is no information provided about what rules the researcher used to identify the images (e.g., size, shape, etc). Instead the machine learning tool develops its own framework for identification, which is one reason why the solution from the machine learning routine can seem like a black box. Once trained, the algorithm can identify the species of unlabelled images, and may or may not be using the same kind of identifiers that a researcher would use to manually process the images. 
-
-## Logistic regression as a binary classifier
+The main thing to remember about machine learning is that these methods develop their own models for prediction. For example, in image recognition, they might learn to identify images that contain different species of zooplankton by analyzing example images that have been previously labelled by the researcher. However, generally there is no information provided about what rules the researcher used to identify the images (e.g., size, shape, etc). Instead the machine learning tool develops its own framework for identification, which is one reason why the solution from the machine learning routine can seem like a black box. Once trained, the algorithm can identify the species of unlabelled images, and may or may not be using the same kind of identifiers that a researcher would use to manually process the images.
+## Logistic regression
 
 One of the simplest classification methods, and one that does not involve machine learning, is logistic regression. Let's take a common example. A non-native species has been introduced to a region, and we would like to know what percentage of the region would be suitable habitat, in order to get an idea of risks of impact on the native ecosystem. We think that average temperature controls habitat suitability, and we have presence/absence data for the species across a range of different sites. Could we use simple regression to answer the question of whether a given area is suitable habitat? If we indicate absence as 0, and presence as 1, we can regress species occurrence again average annual temperatures at each location. 
 
-```{r log, echo=FALSE, fig.height=6, fig.cap="Species presence/absence and mean annual temperature with linear regression", fig.alt="This figure shows a plot with y-axis labelled 'Species occurance' and x-axis labelled 'Mean annual temperature (°C)'. The plot shows a set of points where 'Species presence/absence' is at 0 and 1. There is a red fitted line, based on the plotted points, that trends upwards."}
+```{r log, echo=TRUE, fig.height=6, fig.cap="Species presence/absence and mean annual temperature with linear regression", fig.alt="This figure shows a plot with y-axis labelled 'Species occurance' and x-axis labelled 'Mean annual temperature (°C)'. The plot shows a set of points where 'Species presence/absence' is at 0 and 1. There is a red fitted line, based on the plotted points, that trends upwards."}
+
+#create some synthetic data with random variation
 x=rnorm(200,  12,2.5)
 y=x
 y=ifelse(x>12, 1,0)
 e=rnorm(200,0,.1)
-
 y=ifelse(y+e>=1., 1,0)
-#y=ifelse(y+e<1., 0,y)
 
-plot(y~x,pch=1,ylim=c(-0.1,1.1), 
+#plot the data and the regression line
+plot(y~x,pch=16,ylim=c(-0.1,1.1), 
      xlim=c(0, 20),col=rgb(0.1, 0.3, 0.4, 0.6),ylab="Species occurrence", xlab="Mean annual temperature (°C)", cex.lab=1.5, las=1)
 lreg=lm(y~x)
-#abline(b=1/20, a=0, col="red")
 abline(lreg, col="red", lwd=2)
 
 ```
 
-As we can see in Fig. \@ref(fig:log), the linear regression does not make a lot of sense for a response variable that is restricted to the values of 0 and 1. The regression line $\beta_0+\beta_1x$ can take on any value between negative and positive infinity, but we don't know how to interpret values greater than 1 or less than zero. The regression line almost always predicts wrong value for y in classification problems.
+As we can see in Fig. \@ref(fig:log), the linear regression does not make a lot of sense for a response variable that is restricted to the values of 0 and 1. The regression line $\beta_0+\beta_1x$ can take on any value between negative and positive infinity, but we don't know how to interpret values greater than one or less than zero. The regression line almost always predicts wrong value for y in classification problems.
 
-Instead of trying to predict y, we can try to predict p(y = 1), i.e., the probability that the species will be found in the area. For invasive species, this probability is often interpreted as habitat suitability for the species. We need a function that gives outputs between 0 and 1: logistic regression is one solution. In this model, probability of y for a given value of x, p(x) is given as: $$\frac{e^{\beta_0+\beta_1x}}{1+e^{\beta_0+\beta_1x}}.$$ Rearranging, we have: $$\frac{p(x)}{1-p(x)}=e^{\beta_0+\beta_1x}.$$ Taking the natural logarithm, we can see that the logistic regression is linear in x: $$\log{\frac{p(x)}{1-p(x)}}=\beta_0+\beta_1x,$$ where the lefthand side is called the log-odds or logit. The logistic function will always produce an S-shaped curve, so regardless of the value of x, we will obtain a sensible prediction.
+Instead of trying to predict y, we can try to predict p(y = 1), i.e., the probability that the species will be found in the area. For invasive species, this probability is often interpreted as habitat suitability for the species. We need a function that gives outputs between 0 and 1: logistic regression is one solution. In this model, probability of y=1 for a given value of x is given as: $$p(y=1|x)=\frac{1}{1+e^{-(\beta_0+\beta_1x)}}.$$ Rearranging, we have: $$\frac{p(y=1|x)}{1-p(y=1|x)}=e^{\beta_0+\beta_1x}.$$ Taking the natural logarithm, we can see that the logistic regression is linear in x: $$\log\left({\frac{p(y=1|x)}{1-p(y=1|x)}}\right )=\beta_0+\beta_1x,$$ where the lefthand side is called the log-odds or logit. The logistic function will always produce an S-shaped curve bounded at 0 and 1, so regardless of the value of x, we will obtain a sensible prediction.
 
 Let's apply this model to our non-native species data using the **g**eneralized **l**inear **m**odel or **glm()** function. We use the glm() function to perform logistic regression by passing in the family="binomial" argument. But if we use glm() to fit a model without passing in the family argument, then it performs linear regression, just like the **l**inear **m**odel or **lm()** function. We will fit the model and then get the predictions.
 
@@ -45,11 +45,15 @@ glm.fit.sp=glm(y~x, family=binomial)
 glm.probs <- predict(glm.fit.sp,type = "response")
 ```
 
-```{r logfit, echo=FALSE, fig.height=6, fig.cap="Species presence/absence and mean annual temperature with logistic regression", fig.alt="This figure shows a plot with y-axis labelled 'Species occurance' and x-axis labelled 'Mean annual temperature (°C). There are a set of points where 'Species occurance' is at 0 and 1. There is a red logistic regression line based on the plotted points."}
+```{r logfit, echo=TRUE, fig.height=6, fig.cap="Species presence/absence and mean annual temperature with logistic regression", fig.alt="This figure shows a plot with y-axis labelled 'Species occurance' and x-axis labelled 'Mean annual temperature (°C). There are a set of points where 'Species occurance' is at 0 and 1. There is a red logistic regression line based on the plotted points."}
+
+#plot the data
 plot(y~x,pch=16,ylim=c(-0.1,1.1), col=rgb(0.1, 0.3, 0.4, 0.6),ylab="Species occurrence", xlab="Mean annual temperature (°C)", cex.lab=1.5, las=1)
 
+#save the regression coefficients
 logcoefs=round(as.data.frame(summary(glm.fit.sp)$coefficients),2)
 
+#plot the fitted curve using the saved coefficients
 curve(exp(logcoefs[1,1]+logcoefs[2,1]*x)/(1+exp(logcoefs[1,1]+logcoefs[2,1]*x)), add=TRUE, col="red", lwd=2)
 
 ```
@@ -64,26 +68,26 @@ knitr::kable(logcoefs, digits=2, caption="Logistic regression coefficient estima
 ```
 
 
-The estimated intercept is typically not of interest. Its main purpose is to adjust the average fitted probability to the proportion of ones in the data. You may be confused by the slope value. Interpreting what $\beta_1$ means is not very easy with logistic regression, simply because we are predicting p(y) and not y. If $\beta_1$ = 0, this means there is no relationship between p(y) and x. If $\beta_1$ > 0, this means that when y gets larger so does the probability that y = 1. If $\beta_1$ < 0, this means that when x gets larger, the probability that y = 1 gets smaller. Our $\beta_1$ is positive, so we are sure that as temperature increases, the probability of habitat suitability will increase as well. For example, suppose a region has an average annual temperature of 12°C. We know that the probability that the habitat is suitable p(y) for our invasive species is: $$p(y)=\frac{e^{paste \beta_0+\beta_1x}}{1+e^{\beta_0+\beta_1x}}.$$
+The estimated intercept is typically not of interest. Its main purpose is to adjust the average fitted probability to the proportion of ones in the data. You may be confused by the slope value. Interpreting what $\beta_1$ means is not very easy with logistic regression, simply because we are predicting p(y=1) and not y, and that the function is sigmoid. If $\beta_1$ = 0, this means there is no relationship between p(y=1) and x. If $\beta_1$ > 0, this means that when y gets larger so does the probability that y = 1. If $\beta_1$ < 0, this means that when x gets larger, the probability that y = 1 gets smaller. Our $\beta_1$ is positive, so we are sure that as temperature increases, the probability of habitat suitability will increase as well. For example, suppose a region has an average annual temperature of 12°C. We know that the probability that the habitat is suitable (p(y=1)) for our invasive species is: $$p(y=1|x)=\frac{1}{1+e^{-(\beta_0+\beta_1x)}}.$$
 Substituting in our fitted values from the logistic regression, we have: 
-$$p(y)=\frac{e^{`r logcoefs[1,1]` + `r logcoefs[2,1]` (12)}}{1+e^{`r logcoefs[1,1]` + `r logcoefs[2,1]`(12)}}=`r round((exp(logcoefs[1,1]+logcoefs[2,1]*12))/(1+exp(logcoefs[1,1]+logcoefs[2,1]*12)),2)`.$$ 
+$$p(y)=\frac{1}{1+e^{-(`r logcoefs[1,1]` + `r logcoefs[2,1]`)(12)}}=`r round(1/(1+exp(-1*(logcoefs[1,1]+logcoefs[2,1]*12))),2)`.$$ 
 The value changes with temperature, so for an average annual temperature of 16°C that probability is `r round((exp(logcoefs[1,1]+logcoefs[2,1]*16))/(1+exp(logcoefs[1,1]+logcoefs[2,1]*16)),2)`, and so on.
 
 **Exercise 1** Try this for yourself, see if you can use similar code in order to estimate the probability that a site with an average annual temperature of 18°C will be occupied by the invasive species.
 
-### Measuring the performance of a binary classifier
+### The confusion matrix
 
-Of course, the data used to fit this relationship is zeros (absence) and ones (present). How well does our model do at predicting species occurrence? In order to answer this question we need to decide on a **threshold value** for the probability prediction. For example, an easy one is 50%. If the model predicts a probability of greater than 0.5, then we will score that as presence, while if the predicted value is equal to or less than 0.5, we will score as an absence. Now we have model predictions in terms of predicted absences and presences (i.e., zeros and ones), and can compare directly to our data. 
+Of course, the data used to fit this relationship is zeros (absence) and ones (present). In order to test model fit we need to decide on a **threshold value** for the probability prediction. For example, an easy one is 50%. If the model predicts a probability of greater than 0.5, then we will score that as presence (y=1), while if the predicted value is equal to or less than 0.5, we will score as an absence (y=0). Now we have model predictions in terms of predicted absences and presences (i.e., zeros and ones), and can compare directly to our data. 
 
-When binary classifications are made, by converting the probabilities using a threshold, there can be four cases for a certain observation:
+When binary classifications are made by converting the probabilities using a threshold, there can be four cases for a certain observation:
 
-1. The response actually negative, the model predicts it to be negative. This is known as true negative (TN). In our case, the invasive species is not present at the location, and the model predicts that it should not be present.
+1. The response actually negative, the model predicts it to be negative. This is known as **true negative (TN)**. In our case, the invasive species is not present at the location, and the model predicts that it should not be present.
 
-2. The response actually negative, but the model predicts it to be positive (i.e., false positive, FP).
+2. The response actually negative, but the model predicts it to be positive (i.e., **false positive, FP**).
 
-3. The response actually positive, and the model predicts it to be positive (i.e., true positive TP).
+3. The response actually positive, and the model predicts it to be positive (i.e., **true positive TP**).
 
-4. The response actually positive, but the model predicts it to be negative (i.e., false negative FN).
+4. The response actually positive, but the model predicts it to be negative (i.e., **false negative FN**).
 
 We can summarize this information in a **confusion matrix** which records the number of times the model correctly predicted the data, and the number of times the model makes incorrect predictions. 
 
@@ -98,12 +102,10 @@ ctab
 
 ```
 
-Elements on the diagonal from left to right are correct classifications, while off-diagonal elements are miss-classifications (i.e., predictions where the predict code of 0 or 1 does not match the actual code of 0 or 1). So in this case, we have `r ctab[1,1]` true negatives (TN), `r ctab[1,2]` false positives (FP), `r ctab[2,1]` false negatives (FN), and `r ctab[2,2]` true positives (TP).
+Elements on the diagonal from left to right are correct classifications, while off-diagonal elements are miss-classifications (i.e., predictions where the predict code of 0 or 1 does not match the actual code of 0 or 1). So in this case, we have `r ctab[1,1]` true negatives (TN), `r ctab[1,2]` false positives (FP), `r ctab[2,1]` false negatives (FN), and `r ctab[2,2]` true positives (TP). We can quantify these errors in a number of ways. The misclassification rate, or **error rate** is the most common metric used to quantify the performance of a binary classifier. This is the probability that the classifier makes a wrong prediction (given as $\frac{FN+FP}{TN+FN+TP+FP}$). Overall `r ctab[1,2]+ctab[2,1]` observations have been misclassified, so we have a total error rate of `r round((ctab[1,2]+ctab[2,1])/sum(ctab)*100,0)`%. 
 
-We can quantify these errors in a number of ways. The classifications rate, or **error rate** is the most common metric used to quantify the performance of a binary classifier. This is the probability that the classifier makes a wrong prediction (given as $\frac{FN+FP}{TN+FN+TP+FP}$). Overall `r ctab[1,2]+ctab[2,1]` observations have been misclassified, so we have a total error rate of `r round((ctab[1,2]+ctab[2,1])/sum(ctab)*100,0)`%. However, `r round(ctab[2,1]/(ctab[2,1]+ctab[2,2])*100,0)`% of the presence data has been misclassified, compared to `r round(ctab[1,2]/(ctab[1,1]+ctab[1,2])*100,0)`% of the absence data. So with respect to the predicting the potential presence of an invasive species, we're not doing much better than random chance.
-
-The terms sensitivity and specificity characterize the performance of classifier for these specific types of errors. In this case, the 
-**sensitivity** is the percentage of occupancy locations that are correctly identified  (true positives), which is `r round(ctab[2,2]/(ctab[2,1]+ctab[2,2])*100,0)`% in this case or one minus the misclassification rate of positives (or 1-`r round(ctab[2,1]/(ctab[2,1]+ctab[2,2]),2)`), also calculated as TP/(TP+FN). **Specificity** is the percentage of non-occupancy sites that are correctly identified (true negatives). We can calculate this as one minus the misclassification of true negatives from the values above (1 − `r round(ctab[1,2]/(ctab[1,1]+ctab[1,2]),2)`) = `r round(1-ctab[1,2]/(ctab[1,1]+ctab[1,2]),2)`, or from the formula  TN/(TN+FP).
+However, `r round(ctab[2,1]/(ctab[2,1]+ctab[2,2])*100,0)`% of the presence data has been misclassified, compared to `r round(ctab[1,2]/(ctab[1,1]+ctab[1,2])*100,0)`% of the absence data. So with respect to the predicting the potential presence of an invasive species, we're not doing much better than random chance. The terms sensitivity and specificity characterize the performance of classifier for these specific types of errors. In this case, the 
+**sensitivity** is the percentage of occupancy locations that are correctly identified  (true positives), which is `r round(ctab[2,2]/(ctab[2,1]+ctab[2,2])*100,0)`% or one minus the misclassification rate of positives (or 1-`r round(ctab[2,1]/(ctab[2,1]+ctab[2,2]),2)`), also calculated as TP/(TP+FN). **Specificity** is the percentage of non-occupancy sites that are correctly identified (true negatives). We can calculate this as one minus the misclassification of true negatives from the values above (1 − `r round(ctab[1,2]/(ctab[1,1]+ctab[1,2]),2)`) = `r round(1-ctab[1,2]/(ctab[1,1]+ctab[1,2]),2)`, or from the formula  TN/(TN+FP).
 
 We can of course, change the decision threshold to see if we can get a better outcome. Let's try 0.65 instead of 0.5.
 ```{r, comment=""}
@@ -125,9 +127,9 @@ This higher threshold gives us an error rate of `r round(err*100,0)`%, sensitivi
 
 **Exercise 2**  Can you calculate the sensitivity and specificity for a threshold classification of 0.45?
 
-#### ROC and AUC
+### ROC and AUC
 
-We can also examine the performance of the model across a range of thresholds. We often see this approach in species distribution modelling, where specificity (% of true positives) is plotted against 1-sensitivity (% of false positives) for threshold values from 0 to 1. This graph is called the **R**eceiver **O**perator **C**urve (**ROC**), and the **A**rea **U**nder that **C**urve (**AUC**) is calculated. This is a fairly standard evaluation for binary classifiers, and there are a number of R packages that will complete this analysis for you. If the model is not performing better than random chance, the expected ROC curve is simply the y=x line. Where the model can perfectly separate the two classes, the ROC curve consists of a vertical line (x=0) and a horizontal line (y=1). For real and simulated data, usually the ROC stays in between these two extreme scenarios. Let's try with our simulated data.
+We can also examine the performance of the model across a range of thresholds. We often see this approach in species distribution modelling, where sensitivity (% of true positives) is plotted against 1-specificity (% of false positives) for threshold values from 0 to 1. This graph is called the **R**eceiver **O**perator **C**urve (**ROC**), and the **A**rea **U**nder that **C**urve (**AUC**) is calculated. This is a fairly standard evaluation for binary classifiers, and there are a number of R packages that will complete this analysis for you. If the model is not performing better than random chance, the expected ROC curve is simply the y=x line. Where the model can perfectly separate the two classes, the ROC curve consists of a vertical line (x=0) and a horizontal line (y=1). For real and simulated data, usually the ROC stays in between these two extreme scenarios. Let's try with our simulated data.
 
 ```{r roc2, echo=TRUE, comment="", fig.cap="Receiver Operator Curve (ROC) for the logistic regression binary classifier of species occurence data", fig.alt="Sensitivity (TPR) ploted versus 1-Specificity (FPR) and the y=x line, where the optimal threshold is also indicated"}
 library(ROCit)
@@ -156,55 +158,13 @@ spec=1-ctab[1,2]/(ctab[1,1]+ctab[1,2])
 
 We can see that this error threshold, as summarized above, gives an error rate of `r round(err*100,0)`%, sensitivity of `r round(sens*100,0)`% and specificity of `r round(spec*100,0)`%. Overall, an okay, but not fantastic model, at the best performing threshold.
 
-### Multiple logistic regression
-If we have more than one predictor, we can fit multiple logistic just like regular regression, as:
-$$p(y)=\frac{e^{\beta_0+\beta_1x_1+...+\beta_nx_n}}{1+e^{\beta_0+\beta_1x_1+...+\beta_nx_n}}$$
-and the $x_n$ predictors can be both qualitative or quantitative. For example, we could add a land classification to our invasive species habitat suitability model so that we have both temperature ($x_1$) and urban and rural ($x_2$) land types.
-
-```{r}
-x2=ifelse(y==1, "urban", "rural")
-e2=rnorm(200,0,.1)
-x2=ifelse(y+e2<1., "rural",x2 )
-x2=ifelse(e2>0.1, "urban", x2)
-```
-
-
-
-```{r, echo=TRUE, comments=""}
-glm.fit.sp2=glm(y~x+as.factor(x2), family=binomial)
-```
-
-
-In this case, our model now has two responses, one for land categorized as urban, and one for land categorized as rural (Fig. \@ref(fig:multilog)).
-
-
-```{r logcoefs2}
-logcoefs2=round(as.data.frame(summary(glm.fit.sp2)$coefficients),2)
-knitr::kable(logcoefs2, digits=2, caption="Logistic regression coefficient estimates and hypothesis tests from species occurrence data with temperature and land category as predictors")
-```
-
-Both predictors are significantly different from zero (Table \@ref(tab:logcoefs2)), and the values tell is that if the land is categorized as urban, we must increase our probability estimate upwards from that of a rural area as:  
-$$p(y)=\frac{e^{`r logcoefs2[1,1]` + `r logcoefs2[2,1]` x_1+`r logcoefs2[3,1]` (1)}}{1+e^{`r logcoefs2[1,1]` + `r logcoefs2[2,1]`x_1+`r logcoefs2[3,1]` (1)}}$$
-```{r multilog, fig.cap="Species occurrence vs temperature and land classification as urban or rural", fig.alt="This figure shows a plot with y-axis labelled 'Species occurrence' and x-axis labelled 'Mean annual temperature (°C)'. The top left of the plot contains a legend with label 'urban' and 'rural' which are denoted by a red circle and a black circle respectively. The plot shows a set of 'urban' red points and 'rural' black points where 'Species occurance' is at 0 and 1. There are two logistic regression lines that represent the land categories. The 'urban' red logistic regression line is above the 'rural' black logistic regression line."}
-plot(y~x, col=as.factor(x2),ylab="Species occurrence", xlab="Mean annual temperature (°C)", cex.lab=1.5, las=1)
-legend("topleft", c("urban", "rural"), pch=1, col=c("red", "black"), bty="n")
-
-
-curve(exp(logcoefs2[1,1]+logcoefs2[2,1]*x)/(1+exp(logcoefs2[1,1]+logcoefs2[2,1]*x)), add=TRUE, col="black", lwd=2)
-
-curve(exp(logcoefs2[1,1]+logcoefs2[2,1]*x+logcoefs2[3,1])/(1+exp(logcoefs2[1,1]+logcoefs2[2,1]*x+logcoefs2[3,1])), add=TRUE, col="red", lwd=2)
-
-```
-
-
-Logistic regression can be extended to multiple classification problems in different ways, but in practice these methods tend not to be used all that often. Instead other techniques such as linear discriminant analysis and random forest tend to be used for multiple-class classification problems (see below).
 
 
 ## Cross-validation
 
 So far, we've evaluated model performance with the data that we used to train the model, but the point of classification tools is to be able to use them on data where we don't already know the answer. In that sense, we are uninterested in in model performance on **training data**, what we really want to do is to test the model on data that was not used in model fitting. For example, we don’t really care how well our method predicts habitat suitability where the invasive species is already located! What we need to know is how well it predicts the habitat suitability of locations where the species has not yet invaded.  The model performance on this **testing data** will give us a better idea of the errors we might expect when we apply our classifier to novel data. While we might naively expect that model performance on the training data will be the same on the testing data, in practice the errors are usually larger, sometimes much larger. In more complex models, this error rate is often the result of overfitting the training data, so that pattern which is just noise is included in the model fit. Consequently, the model is not well fit to data with different sources of noise.
 
-Of course, in biological data is almost always limited! While you might have an extra independent dataset kicking around waiting to be used for model testing, if you don't, you can divide your single dataset into training and testing sets. One easy way to do this is just using random selection. Let's try on our data. We'll divide a dataframe with our data into two parts using the *sample()* function, fit our logistic model on the training data, and evaluate its performance on the testing data.
+Of course, in biology data is almost always limited! While you might have an extra independent dataset kicking around waiting to be used for model testing, if you don't, you can divide your single dataset into training and testing sets. One easy way to do this is just using random selection. Let's try on our data. We'll divide a dataframe with our data into two parts using the **sample()** function, fit our logistic model on the training data, and evaluate its performance on the testing data.
 
 ```{r, echo=TRUE, comment="", message=FALSE}
 #simulate some temperature and occupancy data using a random number generator
@@ -249,13 +209,14 @@ print(paste0("error rate=",err, "; sensitivity=", sens, "; specificity=", spec))
 
 You may want to verify for yourself that the sample function randomly selects rows out of a dataframe
 
-You'll notice that by dividing the data up this way we have only 50 observations in our testing data. We can of course use different percentages to divide up our one dataset into training and testing sets, but models tend to have poorer performance when trained on fewer observations. On the other hand, the small testing dataset may tend to overestimate the test error rate for the model fit, as compared to error rates obtained on a larger amount of data. 
-
-And what about the effects of that random sampling? If we repeat the process of randomly splitting the sample set into two parts, we will get a somewhat different estimate for the error rate on testing data each time, because different observations will be randomly included in the dataset each time. Sometimes the differences between error rates on different testing datasets can be rather large. For example, by random selection an observation which is a huge outlier could be included in one small testing dataset, but not in another, resulting is very different error rates. To guard against undue influence of single observations in our small test dataset we could do the routine of randomly sampling to obtain testing and training sets several times, and look at the average of our testing data performance.
 
 ### k-Fold Cross-Validation
 
-One way of implementing this type of resampling scheme is k-fold cross-validation. With this method, we randomly divide the set of observations into k groups, or folds, of approximately equal size. The first fold is treated as a testing set, and the model is fit on the remaining k − 1 folds. This procedure is repeated k times, and each time, a different group of observations is treated as the testing set. We then average the error rates from each test fold. We can even repeat the entire procedure several times in **repeated k-fold cross-validation**.
+You'll notice that dividing the data up into testing and training sets reduces the number of observations available to test the model. We can of course use different percentages to divide up our one dataset into training and testing sets, but models tend to have poorer performance when trained on fewer observations. On the other hand, the small testing dataset may tend to overestimate the test error rate for the model fit, as compared to error rates obtained on a larger amount of data. 
+
+And what about the effects of that random sampling? If we repeat the process of randomly splitting the sample set into two parts, we will get a somewhat different estimate for the error rate on testing data each time, because different observations will be randomly included in the dataset each time. Sometimes the differences between error rates on different testing datasets can be rather large. For example, by random selection an observation which is a huge outlier could be included in one small testing dataset, but not in another, resulting is very different error rates. To guard against undue influence of single observations in our small test dataset we could do the routine of randomly sampling to obtain testing and training sets several times, and look at the average of our testing data performance.
+
+One way of implementing this type of resampling scheme is k-fold cross-validation. With this method, we randomly divide the set of observations into k groups, or folds, of approximately equal size. The first fold is treated as a testing set, and the model is fit on the remaining k − 1 folds. This procedure is repeated k times, and each time, a different group of observations is treated as the testing set. See the pseudocode below for and idea of how to do this. We then average the error rates from each test fold. We can even repeat the entire procedure several times in **repeated k-fold cross-validation**.
 
 ```{r, echo=TRUE, eval=FALSE}
 #example code for iterated cross-validation set up
@@ -284,55 +245,97 @@ for(k in 1:nfolds) {
 
 ```
 
+While we can program the k-fold validation ourselves, there is a nice package in R, *caret*, that is a good wrapper for these kinds of tasks, and which is really great for machine learning stuff. We can use the caret package to run or k-fold cross validation and to generate our confusion matrix and other statistical info about our classifier.  
 
+Going back to the species occurrence data, let's use the caret package to run a k-fold cross-validation, with 5 folds, rather than simply dividing the data into training and testing sets.
+
+```{r pressure, echo=FALSE, comment="",message=FALSE}
+
+library(caret)
+
+#cross-validation with 5 folds
+train_control <- trainControl(method = "cv", number = 5) 
+
+#fit the logistic regression
+hab <- train(as.factor(occ) ~ temp, data = train,
+                trControl = train_control,
+                method = "glm", 
+             family = "binomial") 
+
+confusionMatrix(hab)
+summary(hab$finalModel)
+
+habprob<-hab$finalModel$fitted.values
+
+#t is the threshold for which the confusion matrix shall be computed
+habclass <- function(t) ifelse(habprob > t , 1,0) 
+
+
+#test with confusion matrix
+confusionMatrix(as.factor(habclass(0.5)),as.factor((train$occ)))
+
+
+```
+
+
+The caret package neatly does our data resampling, fits the model, gets an average model performance across the 5 testing sets, AND calculates the confusion matrix for us. Not bad! The first confusion matrix reports classification error averaged all the folds (assuming a 0.5 threshold). We can also see the regression output for the final model and its predictions. 
+
+We can generate the confusion matrix and statistics for just the final model, for any given threshold. Perhaps the most informative of these stats is the *No Information Rate* which tests whether our classifier does better than random assignment. We see that our accuracy rate is significantly greater than this no information rate, and so, this should be an okay classifier. Also, the *Balanced Accuracy Statistic* gives an accuracy value that weights both majority and minority classes evenly, and is useful if you have unbalanced class membership in your data. In our case, the accuracy and balanced accuracy rates are a bit different, so we may want to investigate further (see [Unbalanced classes](#unbal)).
+
+
+### Multiple logistic regression
+If we have more than one predictor, we can fit multiple logistic just like regular regression, as:
+$$p(y)=\frac{e^{\beta_0+\beta_1x_1+...+\beta_nx_n}}{1+e^{\beta_0+\beta_1x_1+...+\beta_nx_n}}$$
+and the $x_n$ predictors can be both qualitative or quantitative. For example, we could add a land classification to our invasive species habitat suitability model so that we have both temperature ($x_1$) and urban and rural ($x_2$) land types.
+
+```{r}
+x2=ifelse(y==1, "urban", "rural")
+e2=rnorm(200,0,.1)
+x2=ifelse(y+e2<1., "rural",x2 )
+x2=ifelse(e2>0.1, "urban", x2)
+```
+
+
+
+```{r, echo=TRUE, comments=""}
+glm.fit.sp2=glm(y~x+as.factor(x2), family=binomial)
+```
+
+
+In this case, our model now has two responses, one for land categorized as urban, and one for land categorized as rural (Fig. \@ref(fig:multilog)).
+
+
+```{r logcoefs2}
+logcoefs2=round(as.data.frame(summary(glm.fit.sp2)$coefficients),2)
+knitr::kable(logcoefs2, digits=2, caption="Logistic regression coefficient estimates and hypothesis tests from species occurrence data with temperature and land category as predictors")
+```
+
+<br>
+Both predictors are significantly different from zero (Table \@ref(tab:logcoefs2)), and the values tell is that if the land is categorized as urban, we must increase our probability estimate upwards from that of a rural area as:  
+$$p(y)=\frac{e^{`r logcoefs2[1,1]` + `r logcoefs2[2,1]` x_1+`r logcoefs2[3,1]` (1)}}{1+e^{`r logcoefs2[1,1]` + `r logcoefs2[2,1]`x_1+`r logcoefs2[3,1]` (1)}}$$
+```{r multilog, fig.cap="Species occurrence vs temperature and land classification as urban or rural", fig.alt="This figure shows a plot with y-axis labelled 'Species occurrence' and x-axis labelled 'Mean annual temperature (°C)'. The top left of the plot contains a legend with label 'urban' and 'rural' which are denoted by a red circle and a black circle respectively. The plot shows a set of 'urban' red points and 'rural' black points where 'Species occurance' is at 0 and 1. There are two logistic regression lines that represent the land categories. The 'urban' red logistic regression line is above the 'rural' black logistic regression line."}
+plot(y~x, col=as.factor(x2),ylab="Species occurrence", xlab="Mean annual temperature (°C)", cex.lab=1.5, las=1)
+legend("topleft", c("urban", "rural"), pch=1, col=c("red", "black"), bty="n")
+
+
+curve(exp(logcoefs2[1,1]+logcoefs2[2,1]*x)/(1+exp(logcoefs2[1,1]+logcoefs2[2,1]*x)), add=TRUE, col="black", lwd=2)
+
+curve(exp(logcoefs2[1,1]+logcoefs2[2,1]*x+logcoefs2[3,1])/(1+exp(logcoefs2[1,1]+logcoefs2[2,1]*x+logcoefs2[3,1])), add=TRUE, col="red", lwd=2)
+
+```
+
+
+Of course, we are still using logistic regression as a binary classifier. Logistic regression can be extended to multiple classification problems in different ways, but in practice these methods tend not to be used all that often. Instead other techniques such as linear discriminant analysis and random forest tend to be used for multiple-class classification problems (see below).
 
 **Exercise 3: Logistic regression as a binary classifier**
 
-Try to use logistic regression on your own, with a pre-existing dataset in the MASS package. Start by installing the MASS package, load the library and load the data. The dataset we will use has been previously divided into training (Pima.tr) and testing sets (Pima.te). The dataset describes risk factors for diabetes. Type help(Pima.tr) or ?Pima.tr to get a description. You’ll notice that the “type” variable is our classifier and determines whether the patient has diabetes or not.
+Try to use logistic regression on your own, with a pre-existing dataset in the MASS package. Start by installing the MASS package, load the library and load the data. The dataset we will use has been previously divided into training (Pima.tr) and testing sets (Pima.te), so that you don't have to employ k-fold cross validation. The dataset describes several risk factors for diabetes. Type help(Pima.tr) or ?Pima.tr to get a description. You’ll notice that the “type” variable is our classifier and determines whether the patient has diabetes or not.
 
-Next construct a logistic regression to use as a classifier.  Examine your output to determine if the regression is significant. We can use "~." in the formula argument to mean that we use all the remaining variables in the dataset as predictors. 
+Next construct a multiple logistic regression to use as a classifier.  Examine your output to determine if the regression is significant. We can use "~." in the formula argument to mean that we use all the remaining variables in the dataset as predictors. 
 
 Next, use some testing data to test your classifier. The Prima.te dataset to be used as testing data has already been created for you in the MASS package. Use the predict function to get the predicted probabilities, and a threshold value to get classifications.  Then construct a confusion matrix to determine how well your predictor did.
 
-There is a nice package in R, *caret*, that is a good wrapper for these kinds of tasks, and which is really great for machine learning stuff (we'll use in the random forest and artificial neural network sections). We can use the caret package to generate both our confusion matrix and other statistical info about our classifier (where we have saved the predictions of our logistic regression to the dataframe testPima.
-```{r pressure, echo=FALSE, comment="",message=FALSE}
-library(MASS)
 
-data(Pima.tr)
-
-
-#run logistic regression
-Pima.log<-glm(type~., family=binomial,data=Pima.tr)
-
-testPima<-predict(Pima.log, newdata=Pima.te, type="response")
-testPima=as.factor(ifelse(testPima>0.5, "Yes", "No"))
-library(caret)
-confusionMatrix(Pima.te$type, testPima)
-```
-
-Perhaps the most informative of these stats is the *No Information Rate* which tests whether our classifier does better than random assignment. We see that our accuracy rate is significantly greater than this no information rate, and so, this should be an okay classifier. Also, the *Balanced Accuracy Statistic* gives an accuracy value that weights both majority and minority classes evenly, and is useful if you have unbalanced class membership in your data. In our case, the accuracy and balance accuracy rates are similar, so we're doing alright.
-
-The caret package can be used to do lots of the programming required for cross-validation approaches automatically. Going back to the species occurrence data, let's use the caret package to run a k-fold cross-validation, with 5 folds, rather than simply dividing the data into training and testing sets.
-```{r, echo=TRUE,comment="", meassage=FALSE}
-
-# define the resampling method you want to use, in this case cross-validation with 5 folds
-train_control <- trainControl(method = "cv", number = 5)
-
-# train the model on training set, remember to tell caret that this is a classifier 
-#by indicating that occ should be considered a factor variable
-model <- train(as.factor(occ)~temp,
-               data = ivsp,
-               trControl = train_control,
-               method = "glm",
-               family=binomial())
-
-# print cv scores
-summary(model)
-
-confusionMatrix(model)
-```
-
-The caret package neatly does our data resampling, fits the model, gets an average model performance across the 5 testing sets, AND calculates the confusion matrix for us. Not bad!
 
 ### Examples of logistic regression used for classification
 
@@ -343,55 +346,53 @@ Cuddington, K., Sobek-Swant, S., Drake, J., Lee, W., & Brook, M. (2021). Risks o
 Tuda, M., & Luna-Maldonado, A. I. (2020). Image-based insect species and gender classification by trained supervised machine learning algorithms. Ecological Informatics, 60, 101135. https://doi.org/10.1016/j.ecoinf.2020.101135
 
 
-## **L**inear **D**iscriminant **A**nalysis (**LDA**)
-While there are ways to modify logistic regression to classify more that two types of objects, in practice there are better methods such as classification linear discriminant analysis or various machine learning techniques (described below). Linear Discriminant Analysis (LDA) can also be used to classify data based on categorical response variables. One implementation of LDA tries to find a linear combination of the predictors that gives maximum separation between the centers of the data while at the same time minimizing the variation within each group of data. This approach is implemented in many R packages, as in the **lda()** function of the MASS package, for example.
+## Linear Discriminant Analysis (LDA)
+While there are ways to modify logistic regression to classify more that two types of objects, in practice there are better methods such as **l**inear **d**iscriminant **a**nalysis (LDA) or various machine learning techniques (described below). LDA can be used to classify data based on categorical response variables. One implementation of LDA tries to find a linear combination of the predictors that gives maximum separation between the centers of the data while at the same time minimizing the variation within each group of data. This approach is implemented in many R packages, as in the **lda()** function of the MASS package, for example.
 
 You might wonder how finding a linear combination of predictors differs from linear regression, logistic regression, or principal components analysis (PCA). LDA is popular when we have more than two response classes (polytomous responses), which logistic regression can only handle with some modification. In addition, when classes are well-separated, parameter estimates for logistic regression are surprisingly unstable, but LDA does not suffer from this problem. Finally, unlike linear regression, LDA chooses parameters to maximize distance between means of different categories.
 
-### PCA and LDA what’s the difference?
-This approach of using a linear combination of predictors to predict similarity also seems similar to PCA, although of course PCA is an unsupervised learning technique (that is we don't don't have classification which we provide), while LDA is a supervised learning technique (it uses *a priori* class information to train the model). Both PCA and LDA provide the possibility of dimensionality reduction, which is very useful for visualization, and is often used to prepare data for machine learning techniques. However, we would expect (by definition) LDA to provide better data separation when compared to PCA.
+This approach of using a linear combination of predictors to predict similarity also seems similar to [PCA](#PCA), although of course PCA is an unsupervised learning technique (that is we don't don't have classification which we provide), while LDA is a supervised learning technique (it uses *a priori* class information to train the model). Both PCA and LDA provide the possibility of dimensionality reduction, which is very useful for visualization, and is often used to prepare data for machine learning techniques. However, we would expect (by definition) LDA to provide better data separation when compared to PCA.
 
-Let's try out this method by attempting to classify observations in the iris dataset to species using the 4 metrics of sepal and petal length and width.
+Let's try out this method by attempting to classify observations in the iris dataset to species using the 4 metrics of sepal and petal length and width. You may want to take a look at the data first using the **head()**, **str()** or **summary()** functions. There are three species where quantitative morphological features are recorded for each individual.
 
 ```{r, echo=TRUE, comment=""}
 library(MASS)
+data("iris")
 train <- sample(1:150, 75)
 irislda <- lda(Species ~ ., iris, subset = train) 
 irislda
 ```
 Look at the lda object you have saved. A call to **lda()** returns the prior probability of each class, which is just based on the number of classes (the 3 difference species in this case), and the number of observations in each class. We start out very close to an even probability of an observation falling in any class (about 1/3). We also have the class-specific means for each covariate. So observations of species *I.setosa* have a mean Sepal.Length of `r round(irislda$means[1,1],2)`. 
 
-Finally we have the fitted model, which consists of the the linear combination of predictor variables that are used to form the LDA decision rule. With 3 classes we have at most two linear discriminants, and similar to PCA we can see parameters that relate the various characteristics such as Sepal.Length to these axes.(e.g., LD1 = `r round(irislda$scaling[1,1],2)` Sepal.Length + `r round(irislda$scaling[2,1],2)` Sepal.Width - `r round(irislda$scaling[3,1],2)` Petal.Length - `r round(irislda$scaling[4,1],2)` Petal.Width. The trace shows us how much variance is captured by each axis. In this case, almost all of our class division can be done on the first axis.
+Finally we have the fitted model, which consists of the the linear combination of predictor variables that are used to form the LDA decision rule. With 3 classes we have at most two linear discriminants, and similar to PCA we can see parameters that relate the various characteristics such as Sepal.Length to these axes (e.g., LD1 = `r round(irislda$scaling[1,1],2)` Sepal.Length + `r round(irislda$scaling[2,1],2)` Sepal.Width + `r round(irislda$scaling[3,1],2)` Petal.Length + `r round(irislda$scaling[4,1],2)` Petal.Width. The trace shows us how much variance is captured by each axis. In this case, almost all of our class division can be done on the first axis.
 
-There is also a prediction method implemented for lda objects. It returns the classification and the posterior probabilities of the new data. If you examine the prediction object, you will see it contains a matrix called posterior whose columns are the groups, rows are the individuals and values are the posterior probability that the corresponding observation belongs to each of the groups. Below, Let's see how we do on the testing portion of the data (i.e., everything that is not the training data).
+There is also a prediction method implemented for lda objects. It returns the classification and the posterior probabilities of the new data. If you examine the prediction object, you will see it contains a matrix called posterior whose columns are the groups, rows are the individuals and values are the posterior probability that the corresponding observation belongs to each of the groups. Let's see how we do with prediction on the testing portion of the data (i.e., everything that is not the training data).
 
 ```{r, echo=TRUE, comment=""}
 plda = predict(irislda, newdata = iris[-train, ])
 confusionMatrix(iris$Species[-train], plda$class)
 ```
 
-We can also visualize our prediction accuracy, using a regular plot() function.
+We have very good accuracy. We can also visualize our prediction accuracy using a regular plot() function.
 
 ```{r, classlda, fig.cap="Classification of the iris dataset using LDA", fig.alt="Figure shows symbols for each species where the colour of the symbol indicates the classification produced by the LDA model", echo=TRUE, comment=""}
 
 plot(plda$x, col=plda$class, pch=as.numeric(iris[-train,"Species"]))
-legend("bottomright", levels(iris[-train,"Species"]),
+legend("bottom", levels(iris[-train,"Species"]),
        pch=1:3, col=1:3)
 
 ```
 
-Again, we see some misclassifications (\@ref(fig:classlda)), where the colour of the symbol indicates whether it has been correctly identified, but this classifier works pretty well. The **ldahist()** function shows us why this is so, the centers of our synthetic variables are pretty well-separated between predicted groups on the first axis (\@ref(fig:ldahist)).
-```{r ldahist, fig.cap="Histogram of the synthetic axis cooredinates for each species", fig.alt="Three histograms",  echo=TRUE,comment=""}
+Again, we see some misclassifications (Fig. \@ref(fig:classlda)), where the colour of the symbol indicates whether it has been correctly identified, but this classifier works pretty well. The **ldahist()** function shows us why this is so, the centers of our synthetic variables are pretty well-separated between predicted groups on the first axis (\@ref(fig:ldahist)).
+```{r ldahist, fig.cap="Histogram of the synthetic axis coordinates for each species", fig.alt="Three histograms",  echo=TRUE,comment=""}
 
 ldahist(plda$x[,1], g=plda$'class', col="red")
 
 ```
 
-The basic **lda()** function assumes that the predictors have linear relationships relationships with the classification. However, it is also possible to assume nonlinear relationships. We can see the difference this makes using another way to visualize the action of the classifier. We will plot out the decision boundary lines in the variable space. The **drawparti()** function in the klaR package can display the results of a linear or quadratic classifications 2 variables at a time. 
+The basic **lda()** function assumes that the predictors have linear relationships relationships with the classification. Another way to display the model is to plot out the decision boundary lines in the variable space. However, it is also possible to assume nonlinear relationships. The **drawparti()** function in the klaR package can display the results of linear or quadratic classifications 2 variables at a time. 
 
-
-
-#### Unbalanced classes
+#### Unbalanced classes{#unbal}
 
 We should note that most if not all classification methods will perform poorly when the training data has a large number of observations in some classes and very few in others. There are several methods to try and cope with this problem, which we don't have space to describe here. The simplest approach is, of course, to just subsample your data so that there are close to equal numbers of observations in each class (called **undersampling**). However, this method will waste some data, and you may not even have enough data for this method to be feasible. With **oversampling**, we randomly duplicate samples from the class with fewer instances, or we generate additional data, based on the data that we do have, so as to match the number of samples in each class. We avoid losing information with this approach, but we run the risk of overfitting our model, as some methods of oversampling will lead to having the same samples in both the training and test data. There are also hybrid methods that combine undersampling with the generation of additional data. Two of the most popular are ROSE (Lunardon et al. 2014) and SMOTE (Chawla et al. 2002). Both of which can be implemented direct in the caret package. You can read more about unbalanced data here (Fernández et al 2018: https://link.springer.com/content/pdf/10.1007/978-3-319-98074-4.pdf)
 
@@ -410,11 +411,11 @@ Polito, M. J., Hinke, J. T., Hart, T., Santos, M., Houghton, L. A., & Thorrold, 
 
 ### Classification and regression trees (CARTs)
 
-Tree-based methods for classification involve dividing up regions defined by the predictor variables. For example, simple species identification trees use this approach. You are looking at a tree: does it have needle- or scale-shaped leaves? Or are the leaves wide? The leaf characteristic predictor is used to divide up the classification possibilities into conifers and deciduous trees (not without errors!). So we repeatedly split the response data into two groups that are as homogeneous as possible. The split is determined by the single predictor that best discriminates among the data. The binary splits continue to partition the data into smaller and smaller groups, or nodes, until the groups are no longer homogeneous. This effort produces a single tree where the binary splits form the branches and the final groups compose the terminal nodes, or leaves.
+Tree-based methods for classification involve dividing up regions defined by the predictor variables. For example, simple species identification trees use this approach. You are looking at a plant: does it have smooth or serrated leaves? The leaf characteristic predictor is used to divide up the classification possibilities (not without errors!). So we repeatedly split the response data into two groups that are as homogeneous as possible. The split is determined by the single predictor that best discriminates among the data. The binary splits continue to partition the data into smaller and smaller groups, or nodes, until the groups are no longer homogeneous. This effort produces a single tree where the binary splits form the branches and the final groups compose the terminal nodes, or leaves.
 
 If this type of method is applied with a continuous response variable instead it is called a *regression tree*, if the response is categorical, it is called a *classification tree*. Often we refer to both techniques at the same time as **C**lassification **A**nd **R**egression **T**rees (CARTs). When used as a regression response predictor, this technique differs from standard regression approaches which are global models where the predictive formula is supposed to hold in the entire data space. Instead trees try to partition the data space into small enough parts where we can apply a simple different model on each part. 
 
-Let’s try a simple example on the iris data that is built-in to R. Take a look at the data set before your start the example. Then, we’ll first split the data into a training and testing set, and run our classification tree algorithm using the **rpart** package.
+Let’s try a simple example on the iris data. We’ll first split the data into a training and testing set, and run our classification tree algorithm using the **rpart** package.
 
 ```{r firstree, echp=TRUE, message=FALSE,fig.width=10, fig.height=7., fig.cap="A simple plot of a tree classifier for the iris data", fig.alt="This figure shows a classification tree using the iris dataset. The top of the plot has label 'Petal.Length<2.45' and splits into two groups: 'setosa' and 'Petal.Width<1.75'. The 'Petal.Width<1.75' group splits into two smaller groups: 'versicolor' and 'virginica'.",echo=TRUE, comment=""}
 library(rpart)
@@ -455,11 +456,12 @@ So how does the model decide when to stop? Presumably you could continue to buil
 Pruning begins by creating a nested series of trees of increasing number of branches, from 0 (no splits) to however many can be reasonably obtained from the data. For each number of branches, an optimal tree can be recovered, i.e., one that minimizes the overall misclassification rate.
 To select the tree of optimal size we use cross-validation. For a given tree size, cross-validation divides the data into equal portions, removes one portion from the data, builds a tree using the remaining portion, and then calculates the error between the observed data and the predictions. This procedure is repeated for each of the remaining portions and then the overall error is summed across all subsets of the data. This is done for each of the nested trees. The tree of optimal size is then determined based on the smallest tree that is with in 1 standard error of the minimum error observed across all trees.
 
-Even with pruning, a single CART is likely to overfit the data, particularly when there are many, many predictors, and thus is not very good for prediction. One way to get around this is to build a bunch of different, non-nested, trees on subsets of the data, and then average across them. Because any given tree is constructed with only a portion of the data, the likelihood of overfitting is drastically reduced. Moreover, averaging across many trees reduces the impact of anomalous results from a single tree. This is the idea of **ensemble learning**, or combining many ‘weak learners’ (individual trees) to produce one ‘strong learner’ (the ensemble).
 
 ### Random Forests
 
-One type of ensemble decision tree is a random forest. Random forests are a frequently used machine learning tool that can be used for both classification and regression. Random forests use a bootstrapped sample of the data, and only a portion of the predictors to construct each tree. This procedure ensures that each individual tree is independent from the others, making it a much more accurate method than some other ensemble learning techniques (e.g., bagging). As well, since both the data and the predictors are subsampled, these models can be fit to more predictors than there are observations. This seems a little counterintuitive, but can be a real benefit for ecological data which typically suffers from low replication.
+Even with pruning, a single CART is likely to overfit the data, particularly when there are many, many predictors, and thus is not very good for prediction. One way to get around this is to build a bunch of different, non-nested, trees on subsets of the data, and then average across them. Because any given tree is constructed with only a portion of the data, the likelihood of overfitting is drastically reduced. Moreover, averaging across many trees reduces the impact of anomalous results from a single tree. This is the idea of **ensemble learning**, or combining many ‘weak learners’ (individual trees) to produce one ‘strong learner’ (the ensemble).
+
+One type of ensemble decision tree is a random forest. Random forests are a frequently used machine learning tool that can be used for both classification and regression. Random forests use a bootstrapped sample of the data, and only a portion of the predictors to construct each tree. This procedure ensures that each individual tree is independent from the others, making it a much more accurate method than some other ensemble learning techniques. As well, since both the data and the predictors are subsampled, these models can be fit to more predictors than there are observations. This seems a little counterintuitive, but can be a real benefit for ecological data which typically suffers from low replication.
 
 Let’s try an ensemble decision tree on the iris data. We will use the *randomForest* package. Note that we do not have to split our data into training and testing sets now, the randomForest package is already doing this sort of thing for us.
 
@@ -470,7 +472,7 @@ RF.model
 
 ```
 
-Our classification is pretty good with a misclassification rate  on the **O**ut **O**f **B**ag data of only 4% (this is the equivalent to the test data from a cross-validation), and errors for individual species from 0 to 0.06%. We might like to look at what the model is doing, but unlike a single CART, random forests do not produce a single visual, since of course the predictions are averaged across many hundreds or thousands of trees. 
+Our classification is pretty good with a misclassification rate  on the **O**ut **O**f **B**ag (OOB) data of only 4% (this is the equivalent to the test data from a cross-validation), and errors for individual species from 0 to 0.06%. We might like to look at what the model is doing, but unlike a single CART, random forests do not produce a single visual, since of course the predictions are averaged across many hundreds or thousands of trees. 
 
 When building random forests, there are three tuning parameters of interest: node size, number of trees, and number of predictors sampled at each split. Careful tuning of these parameters can prevent extended computations with little gain in error reduction. For example, the plot below (Fig. \@ref(fig:rfoob)) shows how the overall OOB error rate, and the error rate for each of the three species, changes with the size of the forest (the number of trees).
 
@@ -481,7 +483,7 @@ legend("topright", c("OOB", "setosa", "versicolor", "virginica"), col=c(1,2,3,4)
 ```
 
 
-Obviously with fewer trees the error rate is higher, but as more trees are added you can see the error rate decrease and more or less flatten out. In the above plot (Fig \@ref(fig:rfoob)), we could easily reduce the number of trees down to 300 and experience relatively little loss in predictive ability. This is easy to do:
+Obviously with fewer trees the error rate is higher, but as more trees are added you can see the error rate decrease and more or less flatten out. As we can see (Fig \@ref(fig:rfoob)), we could easily reduce the number of trees down to 300 and experience relatively little loss in predictive ability. This is easy to do:
 
 ```{r, echo=TRUE, comment=""}
 update(RF.model, ntree = 300)
@@ -489,7 +491,7 @@ update(RF.model, ntree = 300)
 
 So we see little change in our error rate.
 
-Despite not yielding a single visualizable tree, we can get information about the random forest model. One metric is the relative importance of the predictors. By ranking predictors based on how much they influence the response, random forests may be a useful tool for selecting predictors before trying another framework, such as CART. Importance can be obtained using the importance function, and plotted using the *varImpPlotfunction()*:
+Despite not yielding a single visualizable tree, we can get information about the random forest model. One metric is the relative importance of the predictors. By ranking predictors based on how much they influence the response, random forests may be a useful tool for selecting predictors before trying another framework, such as CART. Importance can be obtained and plotted using the **varImpPlotfunction()**:
 
 ```{r vipp, echo=TRUE, fig.cap="Variable importance plot for our random forest model of the iris data", fig.alt="This figure shows a plot with title 'RF.model' that has y-axis with variables 'Petal.Width', 'Petal.Length', 'Sepal.Length' and 'Sepal.Width' from top to bottom and x-axis with label 'MeanDecreaseGini'. There are 4 points on the graph. Each point corresponds to one of the y-axis variables. The mean decrease in Gini Index is at the lowest for 'Sepal.Width' followed by 'Sepal.Length', then 'Petal.Length' and lastly is at the highest for 'Petal.Width'."}
 varImpPlot(RF.model) 
@@ -510,7 +512,7 @@ The y-axis is a bit tricky to interpret (Fig. \@ref(fig:PEplot)). Since we are d
 
 **Missing data**
 
-Its worth noting that the default behavior of randomForest is to refuse to fit trees with missing predictors. You can, however, specify a few alternative arguments: the first is na.action = na.omit, which removes the rows with missing values outright. Another option is to use na.action = na.roughfix, which replaces missing values with the median (for continuous variables) or the most frequent level (for categorical variables). Missing responses are harder: you can either remove that row, or use the function rfImpute to impute values. The imputed values are the average of the non-missing observations, weighted by their proximity to non-missing observations (based on how often they fall in terminal nodes with those observations). rfImpute tends to give optimistic estimates of the OOB error.
+Its worth noting that the default behavior of randomForest is to refuse to fit trees with missing predictors. You can, however, specify a few alternative arguments: the first is na.action = na.omit, which removes the rows with missing values outright. Another option is to use na.action = na.roughfix, which replaces missing values with the median (for continuous variables) or the most frequent level (for categorical variables). Missing classifications are harder: you can either remove that row, or use the function **rfImpute()** to impute values. The imputed values are the average of the non-missing observations, weighted by their proximity to non-missing observations (based on how often they fall in terminal nodes with those observations). rfImpute tends to give optimistic estimates of the OOB error.
 
 **Exercise 4** See if you can construct a random forest that predicts diabetes in patients based on other indicators using the Pima.tr data as your training set and Pima.te as your test set. Report on the performance of your classifier.
 
@@ -534,7 +536,7 @@ Kruk, C., Devercelli, M., Huszar, V. L. M., Hernández, E., Beamud, G., Diaz, M.
  
 ## **A**rtificial **N**eural **N**etworks (ANN)
 
-Artificial neural networks (ANN) are another machine learning tool that can be used for both classification and regression. They can be viewed as analogous to human nervous system, in the sense that a neural network is made up of interconnected information processing units. Like tree-based methods, artificial neural networks learn by processing previously categorized examples (supervised learning). 
+Artificial neural networks (ANN) are another machine learning tool that can be used for both classification and regression. They can be viewed as analogous to human nervous system, in the sense that a neural network is made up of interconnected information processing units. Like tree-based methods, artificial neural networks learn classification models by processing previously categorized examples (supervised learning). 
 
 An artificial neural network is made up of artificial neurons. Each neuron in the network takes inputs, processes them, passes the processed information through a nonlinear function that converts the prediction to the desired type of output and finally gives the result (Fig. \@ref(fig:neuron)). 
 ```{r neuron, fig.height=4, fig.cap="Diagram showing the inputs, and internal components, including weighting, summation and activation function, that make up an aritifcial neuron", ECHO=FALSE}
@@ -569,15 +571,19 @@ symbols(x=.63, y=.7, circles=.065, inches=F, add=T)
 
 Some of the information will be more important for producing the correct output, the machine learning algorithm then weights this type of information more heavily. During the process of training, the ANN determines the error between the prediction and the target output. The network then adjusts its the weight it gives to each type of information. Successive adjustments are made using a learning rule and will cause the neural network to produce output which is increasingly similar to the target output. After a sufficient number of these adjustments the training can be terminated based upon certain criteria (see below for more discussion about learning).
 
-Once an ann model has been fitted, to predict classification of novel data it, 
+Once an ANN model has been fitted, to predict classification of novel data it:
+
 1. Weights the input
+
 2. Multiplies all the inputs, x, by their weights, w
+
 3. Adds all the multiplied values to get a weighted sum, and then
+
 4. applies an *activation* function to the weighted input
 
 The activation functions are used to map the input between the required values. For example, between 0 and 1 for probability predictions. There are many functions used such as sigmoid, tan hyperbolic, linear etc. I haven't shown it here, but a bias can also be applied to the data which allows you to shift the activation function curve up or down.
 
-Of course, like a human brain, there is more than on neuron in a network, so we have have a *layer* of neurons. In Fig \@ref(fig:ann) we have a **feedforward neural network** which consists of 2 inputs, 1 hidden layer with 3 hidden neurons, and 1 final output. We could have decided to add another intermediate “hidden” layer between the input and the final output exactly in the same way. Then we would have had a neural network with 2 hidden layers. Or we could have chosen to stay with 1 hidden layer but to have more neurons in it (5 instead of 3, for example).The parallel processing of information by many neurons allows ANNs to deal with non-linearity easily. Not all the neural networks fit the template described above. There are different kinds of architectures, but the feedforward neural network (also called Multi Layer Perceptron) is really the first basic architecture to understand. 
+Of course, like a human brain, there is more than on neuron in a network, so we have have a *layer* of neurons. In Fig \@ref(fig:ann) we have a **feedforward neural network** where the information moves only in one direction, forward from input to output. The ANN consists of 2 inputs, 1 hidden layer with 3 hidden neurons, and 1 final output. The layers between input and output are called "hidden" because you do not see what they are doing, even though this is where all the processing happens. We could have decided to add another intermediate hidden layer between the input and the final output exactly in the same way. Then we would have had a neural network with 2 hidden layers. Or we could have chosen to stay with 1 hidden layer but to have more neurons in it (5 instead of 3, for example).The parallel processing of information by many neurons allows ANNs to deal with non-linearity easily. Not all the neural networks fit the template described above. There are different kinds of architectures, but the feedforward neural network (also called Multi Layer Perceptron) is really the first basic architecture to understand. 
 
 ```{r ann, fig.cap="Diagram of an artificial neural network", fig.alt="Artificial neural network", echo=FALSE}
 plot(0,type='n',axes=FALSE,ann=FALSE,xlim=c(-.05,.75), ylim=c(0,1.5))
@@ -614,22 +620,23 @@ rect(.37, 0.3, .43, 1.5)
 
 ### ANN learning
 
-Once defined, the model still need to be fitted (i.e., the weights should be adjusted, based on the data, to minimize some error function, just as in the case of the linear regression) and that is a really difficult optimization task to complete. There are many learning rules that are used with neural networks such as: least mean square, gradient descent, newton’s rule, conjugate gradient and others. So during the model fitting process the algorithm sets the initial weights of the network randomly (given some well chosen distribution), and then tries to adjust the weights (and other model parameters such as bias and intercepts) to minimize error. 
+Once defined, the model still need to be fitted (i.e., the weights should be adjusted, based on the data, to minimize some error function) and that is a really difficult optimization task to complete. There are many learning rules that are used with neural networks such as: least mean square error, gradient descent, newton’s rule, conjugate gradient and others. So during the model fitting process the algorithm sets the initial weights of the network randomly (given some well chosen distribution), and then tries to adjust the weights (and other model parameters such as bias and intercepts) to minimize error. 
 
-A common optimization method is **backward error propagation using gradient descent**. In this method, the ANN applies a gradient descent over all these parameters to iteratively improve (reduce) the error metric. As its name suggests, gradient descent involves calculating the gradient of the target function, which is a vector of partial derivatives with respect to input variables. You may recall from calculus that the first-order derivative of a function gives the slope of a function at a given point. The gradient descent algorithm uses this calculation to select new weights for each input variable that result in a lower error. The step size, sometimes called the learning rate, is used to control how much to change each input variable with respect to the gradient. This process is repeated until the minimum of the target function is located, a maximum number of candidate solutions are evaluated, or some other stop condition.
+A common optimization method is **backward error propagation using gradient descent**. In this method, the ANN applies a [gradient descent](#gradient) over all these parameters to iteratively improve (reduce) the error metric. As its name suggests, gradient descent involves calculating the gradient of the target function, which is a vector of partial derivatives with respect to input variables. You may recall from calculus that the first-order derivative of a function gives the slope of a function at a given point. The gradient descent algorithm uses this calculation to select new weights for each input variable that result in a lower error. The step size, sometimes called the learning rate, is used to control how much to change each input variable with respect to the gradient. This process is repeated until the minimum of the target function is located, a maximum number of candidate solutions are evaluated, or some other stop condition.
 
-The back propagation algorithm consists in using the layered structure of the ANN to make the computation of derivatives for gradient descent more efficient. The backpropagation algorithm was originally introduced in the 1970s, but its importance wasn't fully appreciated until Rumelhart et al. (1986) described how backpropagation works far faster than earlier approaches to learning, making it possible to use neural nets to solve problems which had previously been insoluble. Backpropagation will give us an expression for the partial derivative of the error with respect to any weight w (or bias b) in the network. The expression tells us how quickly the error changes when we change the weights and biases. 
+The backpropagation algorithm consists in using the layered structure of the ANN to make the computation of derivatives for gradient descent more efficient. The backpropagation algorithm was originally introduced in the 1970s, but its importance wasn't fully appreciated until Rumelhart et al. (1986) described how backpropagation works far faster than earlier approaches to learning, making it possible to use neural nets to solve problems which had previously been insoluble. Backpropagation will give us an expression for the partial derivative of the error with respect to any weight w (or bias b) in the network. The expression tells us how quickly the error changes when we change the weights and biases. 
 
 I'm not going to give the mathematical details here, but briefly, to implement this method, the algorithm first completes a **forward pass** through the network, which is just a fancy way of saying the model makes a prediction. The error between the prediction and the expected value is calculated. Then, going backwards, through the network, the algorithm finds the partial derivative of the error with respect to the weights from each neuron in the hidden layer. It changes the weights a little bit in a way that makes the prediction slightly closer to the true value (through a gradient descent approach). It then repeat this process as long as it can make “little" changes to the weights that improve the result. To read more about neural net learning, and backwards propagation in particular, take a look at http://neuralnetworksanddeeplearning.com/.
 
 ### Our first ANN
 
-We'll get started trying to use this machine learning technique using our old friend the iris data and the package neuralnets. We divide the data into training and test sets, and then run the neural net algorithm from the neuralnet package. Let's use two inputs, three neurons and standard backward error propagation. We'll also need to set the learning rate to some small value. Our output will be the classification of one of the three species. 
+We'll get started trying to use this machine learning technique using our old friend the iris data and the package neuralnets. We divide the data into training and test sets, and then run the neural net algorithm from the neuralnet package. Let's use two inputs, three neurons and standard backward error propagation just like in Fig. \@ref(fig:ann). We'll also need to set the learning rate to some small value. Our output will be the classification of one of the three species. 
 
 When you are done, take a look at the output produced by the algorithm, and plot the ANN using the plot function. What is the meaning of the numbers on the diagram?
 
 
-```{r fig.height=3.5, fig.width=7, results = "asis", echo=TRUE}
+```{r fig.height=3.5, fig.width=7, results = "asis", echo=TRUE, message=FALSE, comment=""}
+
 #sample the data to divide into training and test
 train <- sample(x = nrow(iris), size = nrow(iris)*0.5)
 
@@ -705,11 +712,11 @@ Rumelhart, D. E., Hinton, G. E., & Williams, R. J. (1986). Learning representati
 ## Answer Key
 **Exercise 1\.** Once you have fitted your model, you can use the code
 ```{r echo=TRUE}
-p18=round((exp(logcoefs[1,1]+logcoefs[2,1]*18))/(1+exp(logcoefs[1,1]+logcoefs[2,1]*18)),2)
+p18=round(1/(1+exp(-(logcoefs[1,1]+logcoefs[2,1]*18))),2)
 
 ```
 
-to get the probability of occupancy at locations with a mean annual temperature of 18C of approximately `r p18`. Your value will vary slightly depending on the stochasticity from the random routines used to generate our simulated observations.
+to get the probability of occupancy at locations with a mean annual temperature of 18°C of approximately `r p18`. Your value will vary slightly depending on the stochasticity from the random routines used to generate our simulated observations.
 
 **Exercise 2\.** We first need to change the threshold for our classification, and then recalculate sensitivity and specificity for our results
 ```{r, echo=TRUE, comment=""}
@@ -767,11 +774,11 @@ You should notice there there have been some misclassifications at 50%, and that
 
 **Exercise  4\.**
 
-We've used the caret package to run our random forest to classify the Pima diabetes data using a kfold cross-validation procedure, given that the dataset is fairly small. We've even divided the data into training and testing data (i.e., this is a bit overkill, considering that random forest will calculate out of bag error all by itself).
+We've used the caret package to run our random forest to classify the Pima diabetes data using a k-fold cross-validation procedure, given that the dataset is fairly small. We've even divided the data into training and testing data (i.e., this is a bit overkill, considering that random forest will calculate out of bag error all by itself).
 
 We use the fitted model to predict the test data, and then generate a confusion matrix to take a look at how well it does. We also examine which predictors are most important.
 
-```{r e4, fig.cap="Variable importance plot from the final random forest model selected by caret for the Pima.tr dataset", fig.alt="Variable importance is indicated by the mean decrease in the Gini index"}
+```{r e4, fig.cap="Variable importance plot from the final random forest model selected by caret for the Pima.tr dataset", fig.alt="Variable importance is indicated by the mean decrease in the Gini index", comment="", message=FALSE}
 library(randomForest)
 library(caret)
 #cross-validation with 5 folds
