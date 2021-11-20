@@ -13,6 +13,7 @@ In this module we will continue our exploration of techniques for multivariate d
 There are many methods that can be employed for classification tasks ranging from logistic regression to random forest techniques. While some of these methods are classic multivariate methods, others, like random forest classifiers, are machine learning tasks. Machine learning is an application of artificial intelligence, which allows algorithms to become more accurate at predicting outcomes without being explicitly programmed to do so. When we fit a regression in the ordinary way, we specify the model ahead of time and determine if the model has good or bad fit. We might then modify our model to reduce prediction error. In machine learning, the algorithm itself completes the tasks of model specification, evaluation and improvement. Spooky!
 
 The main thing to remember about machine learning is that these methods develop their own models for prediction. For example, in image recognition, they might learn to identify images that contain different species of zooplankton by analyzing example images that have been previously labelled by the researcher. However, generally there is no information provided about what rules the researcher used to identify the images (e.g., size, shape, etc). Instead the machine learning tool develops its own framework for identification, which is one reason why the solution from the machine learning routine can seem like a black box. Once trained, the algorithm can identify the species of unlabelled images, and may or may not be using the same kind of identifiers that a researcher would use to manually process the images.
+
 ## Logistic regression
 
 One of the simplest classification methods, and one that does not involve machine learning, is logistic regression. Let's take a common example. A non-native species has been introduced to a region, and we would like to know what percentage of the region would be suitable habitat, in order to get an idea of risks of impact on the native ecosystem. We think that average temperature controls habitat suitability, and we have presence/absence data for the species across a range of different sites. Could we use simple regression to answer the question of whether a given area is suitable habitat? If we indicate absence as 0, and presence as 1, we can regress species occurrence again average annual temperatures at each location. 
@@ -245,7 +246,7 @@ for(k in 1:nfolds) {
 
 ```
 
-While we can program the k-fold validation ourselves, there is a nice package in R, *caret*, that is a good wrapper for these kinds of tasks, and which is really great for machine learning stuff. We can use the caret package to run or k-fold cross validation and to generate our confusion matrix and other statistical info about our classifier.  
+While we can program the k-fold cross-validation ourselves, there is a nice package in R, *caret*, that is a good wrapper for these kinds of tasks, and which is really great for machine learning stuff. We can use the caret package to run or k-fold cross validation and to generate our confusion matrix and other statistical info about our classifier.  
 
 Going back to the species occurrence data, let's use the caret package to run a k-fold cross-validation, with 5 folds, rather than simply dividing the data into training and testing sets.
 
@@ -284,8 +285,8 @@ We can generate the confusion matrix and statistics for just the final model, fo
 
 
 ### Multiple logistic regression
-If we have more than one predictor, we can fit multiple logistic just like regular regression, as:
-$$p(y)=\frac{e^{\beta_0+\beta_1x_1+...+\beta_nx_n}}{1+e^{\beta_0+\beta_1x_1+...+\beta_nx_n}}$$
+If we have more than one predictor, we can fit a multiple logistic just like a regular regression, as:
+$$p(y)=\frac{1}{1+e^{-(\beta_0+\beta_1x_1+...+\beta_nx_n)}}$$
 and the $x_n$ predictors can be both qualitative or quantitative. For example, we could add a land classification to our invasive species habitat suitability model so that we have both temperature ($x_1$) and urban and rural ($x_2$) land types.
 
 ```{r}
@@ -312,7 +313,7 @@ knitr::kable(logcoefs2, digits=2, caption="Logistic regression coefficient estim
 
 <br>
 Both predictors are significantly different from zero (Table \@ref(tab:logcoefs2)), and the values tell is that if the land is categorized as urban, we must increase our probability estimate upwards from that of a rural area as:  
-$$p(y)=\frac{e^{`r logcoefs2[1,1]` + `r logcoefs2[2,1]` x_1+`r logcoefs2[3,1]` (1)}}{1+e^{`r logcoefs2[1,1]` + `r logcoefs2[2,1]`x_1+`r logcoefs2[3,1]` (1)}}$$
+$$p(y)=\frac{1}{1+e^{-(`r logcoefs2[1,1]` + `r logcoefs2[2,1]`x_1+`r logcoefs2[3,1]` (1))}}$$
 ```{r multilog, fig.cap="Species occurrence vs temperature and land classification as urban or rural", fig.alt="This figure shows a plot with y-axis labelled 'Species occurrence' and x-axis labelled 'Mean annual temperature (°C)'. The top left of the plot contains a legend with label 'urban' and 'rural' which are denoted by a red circle and a black circle respectively. The plot shows a set of 'urban' red points and 'rural' black points where 'Species occurance' is at 0 and 1. There are two logistic regression lines that represent the land categories. The 'urban' red logistic regression line is above the 'rural' black logistic regression line."}
 plot(y~x, col=as.factor(x2),ylab="Species occurrence", xlab="Mean annual temperature (°C)", cex.lab=1.5, las=1)
 legend("topleft", c("urban", "rural"), pch=1, col=c("red", "black"), bty="n")
@@ -377,8 +378,8 @@ We have very good accuracy. We can also visualize our prediction accuracy using 
 
 ```{r, classlda, fig.cap="Classification of the iris dataset using LDA", fig.alt="Figure shows symbols for each species where the colour of the symbol indicates the classification produced by the LDA model", echo=TRUE, comment=""}
 
-plot(plda$x, col=plda$class, pch=as.numeric(iris[-train,"Species"]))
-legend("bottom", levels(iris[-train,"Species"]),
+plot(plda$x, col=plda$class, pch=as.numeric(iris[-train,"Species"]), ylim=c(-4,4))
+legend("bottomright", levels(iris[-train,"Species"]),
        pch=1:3, col=1:3)
 
 ```
@@ -394,7 +395,7 @@ The basic **lda()** function assumes that the predictors have linear relationshi
 
 #### Unbalanced classes{#unbal}
 
-We should note that most if not all classification methods will perform poorly when the training data has a large number of observations in some classes and very few in others. There are several methods to try and cope with this problem, which we don't have space to describe here. The simplest approach is, of course, to just subsample your data so that there are close to equal numbers of observations in each class (called **undersampling**). However, this method will waste some data, and you may not even have enough data for this method to be feasible. With **oversampling**, we randomly duplicate samples from the class with fewer instances, or we generate additional data, based on the data that we do have, so as to match the number of samples in each class. We avoid losing information with this approach, but we run the risk of overfitting our model, as some methods of oversampling will lead to having the same samples in both the training and test data. There are also hybrid methods that combine undersampling with the generation of additional data. Two of the most popular are ROSE (Lunardon et al. 2014) and SMOTE (Chawla et al. 2002). Both of which can be implemented direct in the caret package. You can read more about unbalanced data here (Fernández et al 2018: https://link.springer.com/content/pdf/10.1007/978-3-319-98074-4.pdf)
+We should note that most if not all classification methods will perform poorly when the training data has a large number of observations in some classes and very few in others. There are several methods to try and cope with this problem, which we don't have space to describe here. The simplest approach is, of course, to just subsample your data so that there are close to equal numbers of observations in each class (called **undersampling**). However, this method will waste some data, and you may not even have enough data for this method to be feasible. With **oversampling**, we randomly duplicate samples from the class with fewer instances, or we generate additional data, based on the data that we do have, so as to match the number of samples in each class. We avoid losing information with this approach, but we run the risk of overfitting our model, as some methods of oversampling will lead to having the same samples in both the training and test data. There are also hybrid methods that combine undersampling with the generation of additional data. Two of the most popular are ROSE (Lunardon et al. 2014) and SMOTE (Chawla et al. 2002). Both of which can be implemented direct in the caret package. You can read more about unbalanced data here ([Fernández et al 2018] (https://link.springer.com/content/pdf/10.1007/978-3-319-98074-4.pdf)).
 
 
 ### Examples of discriminant analysis used for classification
@@ -534,9 +535,9 @@ Kruk, C., Devercelli, M., Huszar, V. L. M., Hernández, E., Beamud, G., Diaz, M.
 
 **ranger()** (ranger) is a faster implementation of the random forest algorithm
  
-## **A**rtificial **N**eural **N**etworks (ANN)
+## Artificial Neural Networks (ANN)
 
-Artificial neural networks (ANN) are another machine learning tool that can be used for both classification and regression. They can be viewed as analogous to human nervous system, in the sense that a neural network is made up of interconnected information processing units. Like tree-based methods, artificial neural networks learn classification models by processing previously categorized examples (supervised learning). 
+**A**rtificial **n**eural **n**etworks (ANN) are another machine learning tool that can be used for both classification and regression. They can be viewed as analogous to human nervous system, in the sense that a neural network is made up of interconnected information processing units. Like tree-based methods, artificial neural networks learn classification models by processing previously categorized examples (supervised learning). 
 
 An artificial neural network is made up of artificial neurons. Each neuron in the network takes inputs, processes them, passes the processed information through a nonlinear function that converts the prediction to the desired type of output and finally gives the result (Fig. \@ref(fig:neuron)). 
 ```{r neuron, fig.height=4, fig.cap="Diagram showing the inputs, and internal components, including weighting, summation and activation function, that make up an aritifcial neuron", ECHO=FALSE}
@@ -646,20 +647,20 @@ iristest <- iris[-train,]
 # Run the multiclass neural net to produce a classifier
 library(neuralnet)
 
-nn <- neuralnet(Species ~ Petal.Width + Petal.Length, iristrain, hidden=3,linear.output = FALSE, algorith='backprop', learningrate = 0.01)
+nniris <- neuralnet(Species ~ Petal.Width + Petal.Length, iristrain, hidden=3,linear.output = FALSE, algorith='backprop', learningrate = 0.01)
 
 #rounding the weight values so the plot is tidier
-nn$weights[[1]] <- lapply(nn$weights[[1]], function(x) round(x, 1))
+nniris$weights[[1]] <- lapply(nniris$weights[[1]], function(x) round(x, 1))
 
 #plotting the neural net (but not the intercepts or error rates)
-plot(nn, rep="best", information=FALSE, intercept=FALSE)
+plot(nniris, rep="best", information=FALSE, intercept=FALSE)
 
 ```
 
 Finally, we'll generate a confusion matrix for our neural net to see how well it did. The **compute()** function gives us the probability of class membership, and we'll just select the species with the highest probability.
 ```{r, echo=FALSE, comment=""}
 #use to predict
-comp <- compute(nn, iristest[-5])
+comp <-compute(nniris, iristest[-5])
 pred.weights <- comp$net.result
 idx <- apply(pred.weights, 1, which.max)
 pred <- c('setosa', 'versicolor', 'virginica')[idx]
