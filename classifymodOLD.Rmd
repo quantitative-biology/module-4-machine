@@ -18,7 +18,7 @@ The main thing to remember about machine learning is that these methods develop 
 
 One of the simplest classification methods, and one that does not involve machine learning, is logistic regression. Let's take a common example. A non-native species has been introduced to a region, and we would like to know what percentage of the region would be suitable habitat, in order to get an idea of risks of impact on the native ecosystem. We think that average temperature controls habitat suitability, and we have presence/absence data for the species across a range of different sites. Could we use simple regression to answer the question of whether a given area is suitable habitat? If we indicate absence as 0, and presence as 1, we can regress species occurrence again average annual temperatures at each location. 
 
-```{r log, echo=TRUE, fig.height=6, fig.cap="Species presence/absence and mean annual temperature with linear regression", fig.alt="This figure shows a plot with y-axis labelled 'Species occurance' and x-axis labelled 'Mean annual temperature (°C)' with a red fitted line trending upwards based on the plotted points."}
+```{r log, echo=TRUE, fig.height=6, fig.cap="Species presence/absence and mean annual temperature with linear regression", fig.alt="This figure shows a plot with y-axis labelled 'Species occurance' and x-axis labelled 'Mean annual temperature (°C)'. The plot shows a set of points where 'Species presence/absence' is at 0 and 1. There is a red fitted line, based on the plotted points, that trends upwards."}
 
 #create some synthetic data with random variation
 x=rnorm(200,  12,2.5)
@@ -31,7 +31,7 @@ y=ifelse(y+e>=1., 1,0)
 plot(y~x,pch=16,ylim=c(-0.1,1.1), 
      xlim=c(0, 20),col=rgb(0.1, 0.3, 0.4, 0.6),ylab="Species occurrence", xlab="Mean annual temperature (°C)", cex.lab=1.5, las=1)
 lreg=lm(y~x)
-abline(lreg, col=2, lwd=2)
+abline(lreg, col="red", lwd=2)
 
 ```
 
@@ -46,7 +46,7 @@ glm.fit.sp=glm(y~x, family=binomial)
 glm.probs <- predict(glm.fit.sp,type = "response")
 ```
 
-```{r logfit, echo=TRUE, fig.height=6, fig.cap="Species presence/absence and mean annual temperature with logistic regression", fig.alt="This figure shows a plot with y-axis labelled 'Species occurance' and x-axis labelled 'Mean annual temperature (°C) with a red logistic regression line based on the plotted points."}
+```{r logfit, echo=TRUE, fig.height=6, fig.cap="Species presence/absence and mean annual temperature with logistic regression", fig.alt="This figure shows a plot with y-axis labelled 'Species occurance' and x-axis labelled 'Mean annual temperature (°C). There are a set of points where 'Species occurance' is at 0 and 1. There is a red logistic regression line based on the plotted points."}
 
 #plot the data
 plot(y~x,pch=16,ylim=c(-0.1,1.1), col=rgb(0.1, 0.3, 0.4, 0.6),ylab="Species occurrence", xlab="Mean annual temperature (°C)", cex.lab=1.5, las=1)
@@ -55,7 +55,7 @@ plot(y~x,pch=16,ylim=c(-0.1,1.1), col=rgb(0.1, 0.3, 0.4, 0.6),ylab="Species occu
 logcoefs=round(as.data.frame(summary(glm.fit.sp)$coefficients),2)
 
 #plot the fitted curve using the saved coefficients
-curve(exp(logcoefs[1,1]+logcoefs[2,1]*x)/(1+exp(logcoefs[1,1]+logcoefs[2,1]*x)), add=TRUE, col=2, lwd=2)
+curve(exp(logcoefs[1,1]+logcoefs[2,1]*x)/(1+exp(logcoefs[1,1]+logcoefs[2,1]*x)), add=TRUE, col="red", lwd=2)
 
 ```
 
@@ -250,7 +250,7 @@ While we can program the k-fold cross-validation ourselves, there is a nice pack
 
 Going back to the species occurrence data, let's use the caret package to run a k-fold cross-validation, with 5 folds, rather than simply dividing the data into training and testing sets.
 
-```{r pressure, echo=TRUE, comment="",message=FALSE}
+```{r pressure, echo=FALSE, comment="",message=FALSE}
 
 library(caret)
 
@@ -281,26 +281,7 @@ confusionMatrix(as.factor(habclass(0.5)),as.factor((train$occ)))
 
 The caret package neatly does our data resampling, fits the model, gets an average model performance across the 5 testing sets, AND calculates the confusion matrix for us. Not bad! The first confusion matrix reports classification error averaged all the folds (assuming a 0.5 threshold). We can also see the regression output for the final model and its predictions. 
 
-We can generate the confusion matrix and statistics for just the final model, for any given threshold.
-```{r,echo=TRUE, comment="",message=FALSE}
-summary(hab$finalModel)
-
-habprob<-hab$finalModel$fitted.values
-
-#t is the threshold for which the confusion matrix shall be computed
-habclass <- function(t) ifelse(habprob > t , 1,0) 
-
-
-#test with confusion matrix
-confusionMatrix(as.factor(habclass(0.5)),as.factor((train$occ)))
-
-
-```
-
-
-
-
-Perhaps the most informative of these stats is the *No Information Rate* which tests whether our classifier does better than random assignment. We see that our accuracy rate is significantly greater than this no information rate, and so, this should be an okay classifier. Also, the *Balanced Accuracy Statistic* gives an accuracy value that weights both majority and minority classes evenly, and is useful if you have unbalanced class membership in your data. In our case, the accuracy and balanced accuracy rates are a bit different, so we may want to investigate further (see [Unbalanced classes](#unbal)).
+We can generate the confusion matrix and statistics for just the final model, for any given threshold. Perhaps the most informative of these stats is the *No Information Rate* which tests whether our classifier does better than random assignment. We see that our accuracy rate is significantly greater than this no information rate, and so, this should be an okay classifier. Also, the *Balanced Accuracy Statistic* gives an accuracy value that weights both majority and minority classes evenly, and is useful if you have unbalanced class membership in your data. In our case, the accuracy and balanced accuracy rates are a bit different, so we may want to investigate further (see [Unbalanced classes](#unbal)).
 
 
 ### Multiple logistic regression
@@ -333,14 +314,14 @@ knitr::kable(logcoefs2, digits=2, caption="Logistic regression coefficient estim
 <br>
 Both predictors are significantly different from zero (Table \@ref(tab:logcoefs2)), and the values tell is that if the land is categorized as urban, we must increase our probability estimate upwards from that of a rural area as:  
 $$p(y)=\frac{1}{1+e^{-(`r logcoefs2[1,1]` + `r logcoefs2[2,1]`x_1+`r logcoefs2[3,1]` (1))}}$$
-```{r multilog, fig.cap="Species occurrence vs temperature and land classification as urban or rural", fig.alt="This figure shows a plot with y-axis labelled 'Species occurrence' and x-axis labelled 'Mean annual temperature (°C)' with a legend containing 'urban' and 'rural' labels. There are two logistic regression lines that represent the land categories."}
+```{r multilog, fig.cap="Species occurrence vs temperature and land classification as urban or rural", fig.alt="This figure shows a plot with y-axis labelled 'Species occurrence' and x-axis labelled 'Mean annual temperature (°C)'. The top left of the plot contains a legend with label 'urban' and 'rural' which are denoted by a red circle and a black circle respectively. The plot shows a set of 'urban' red points and 'rural' black points where 'Species occurance' is at 0 and 1. There are two logistic regression lines that represent the land categories. The 'urban' red logistic regression line is above the 'rural' black logistic regression line."}
 plot(y~x, col=as.factor(x2),ylab="Species occurrence", xlab="Mean annual temperature (°C)", cex.lab=1.5, las=1)
-legend("topleft", c("urban", "rural"), pch=1, col=c(2, "black"), bty="n")
+legend("topleft", c("urban", "rural"), pch=1, col=c("red", "black"), bty="n")
 
 
 curve(exp(logcoefs2[1,1]+logcoefs2[2,1]*x)/(1+exp(logcoefs2[1,1]+logcoefs2[2,1]*x)), add=TRUE, col="black", lwd=2)
 
-curve(exp(logcoefs2[1,1]+logcoefs2[2,1]*x+logcoefs2[3,1])/(1+exp(logcoefs2[1,1]+logcoefs2[2,1]*x+logcoefs2[3,1])), add=TRUE, col=2, lwd=2)
+curve(exp(logcoefs2[1,1]+logcoefs2[2,1]*x+logcoefs2[3,1])/(1+exp(logcoefs2[1,1]+logcoefs2[2,1]*x+logcoefs2[3,1])), add=TRUE, col="red", lwd=2)
 
 ```
 
@@ -395,18 +376,18 @@ confusionMatrix(iris$Species[-train], plda$class)
 
 We have very good accuracy. We can also visualize our prediction accuracy using a regular plot() function.
 
-```{r, classlda, fig.cap="Classification of the iris dataset using LDA", fig.alt="Figure shows symbols for each species where the colour of the symbol indicates the classification produced by the LDA model.", echo=TRUE, comment=""}
+```{r, classlda, fig.cap="Classification of the iris dataset using LDA", fig.alt="Figure shows symbols for each species where the colour of the symbol indicates the classification produced by the LDA model", echo=TRUE, comment=""}
 
-plot(plda$x, col=plda$class, pch=as.numeric(iris[-train,"Species"])+14, ylim=c(-4,4))
+plot(plda$x, col=plda$class, pch=as.numeric(iris[-train,"Species"]), ylim=c(-4,4))
 legend("bottomright", levels(iris[-train,"Species"]),
-       pch=as.numeric(unique(iris[-train,"Species"])+14), col=plda$class)
+       pch=1:3, col=1:3)
 
 ```
 
 Again, we see some misclassifications (Fig. \@ref(fig:classlda)), where the colour of the symbol indicates whether it has been correctly identified, but this classifier works pretty well. The **ldahist()** function shows us why this is so, the centers of our synthetic variables are pretty well-separated between predicted groups on the first axis (\@ref(fig:ldahist)).
-```{r ldahist, fig.cap="Histogram of the synthetic axis coordinates for each species", fig.alt="Three histograms for 'setosa', 'versicolor', and 'virginica' with bars concentrated from the right to left respectively.",  echo=TRUE,comment=""}
+```{r ldahist, fig.cap="Histogram of the synthetic axis coordinates for each species", fig.alt="Three histograms",  echo=TRUE,comment=""}
 
-ldahist(plda$x[,1], g=plda$'class', col=2)
+ldahist(plda$x[,1], g=plda$'class', col="red")
 
 ```
 
@@ -437,7 +418,7 @@ If this type of method is applied with a continuous response variable instead it
 
 Let’s try a simple example on the iris data. We’ll first split the data into a training and testing set, and run our classification tree algorithm using the **rpart** package.
 
-```{r firstree, echp=TRUE, message=FALSE,fig.width=10, fig.height=7., fig.cap="A simple plot of a tree classifier for the iris data", fig.alt="One classification tree using the iris dataset with data relating to 'Petal.Width' and 'Petal.Length'.",echo=TRUE, comment=""}
+```{r firstree, echp=TRUE, message=FALSE,fig.width=10, fig.height=7., fig.cap="A simple plot of a tree classifier for the iris data", fig.alt="This figure shows a classification tree using the iris dataset. The top of the plot has label 'Petal.Length<2.45' and splits into two groups: 'setosa' and 'Petal.Width<1.75'. The 'Petal.Width<1.75' group splits into two smaller groups: 'versicolor' and 'virginica'.",echo=TRUE, comment=""}
 library(rpart)
 alpha     <- 0.7 # percentage of training set
 inTrain   <- sample(1:nrow(iris), alpha * nrow(iris))
@@ -452,7 +433,7 @@ text(mytree)
 
 We can see that petal length is used to distinguish species *I.setosa* from the other two species, and then petal width classifies into *I. versicolor* or *I. virginia*. The model of course includes more information than this regarding the number of observations aggregating to each branch of the tree etc. More detailed information can be obtained from **summary(mytree)**, or just typing mytree. A nicer plot, with more details can also be obtained with rpart.plot library.
 
-```{r fancytree, fig.cap="A nicer plot of a tree classifier for the iris data made with the rpart.plot package", fig.alt="A classification tree using the iris dataset. The top right of the figure shows a legend with labels 'setosa', 'versicolor' and 'virginica'. Contains branches for options 'yes' and 'no' for 'Petal.Length'.",echo=TRUE, comment=""}
+```{r fancytree, fig.cap="A nicer plot of a tree classifier for the iris data made with the rpart.plot package", fig.alt="The figure shows a classification tree using the iris dataset. The top right of the figure shows a legend with labels 'setosa', 'versicolor' and 'virginica' which are denoted by an orange square, a gray square and a green square respectively. The top of the plot has a textbox with label 'setosa .36 .30 .33 100%'. Beneath the textbox is the label 'Petal.Length < 2.5' which branches off into options 'yes' to the left of the label and 'no' to the right. Following the 'yes' option is an orange textbox with label 'setosa 1.00 .00 .00 36%'. Following the 'no' option is a light green textbox with label 'virginica .00 .48 .52 64%'. Beneath the textbox is the label 'Petal.Width < 1.8' which splits off into a gray textbox with label 'versicolor .00 .89 .11 33%' and a green textbox with label 'virginica .00 .03 .97 30%'.",echo=TRUE, comment=""}
 library(rpart.plot)
 rpart.plot(mytree)
 ```
@@ -496,7 +477,7 @@ Our classification is pretty good with a misclassification rate  on the **O**ut 
 
 When building random forests, there are three tuning parameters of interest: node size, number of trees, and number of predictors sampled at each split. Careful tuning of these parameters can prevent extended computations with little gain in error reduction. For example, the plot below (Fig. \@ref(fig:rfoob)) shows how the overall OOB error rate, and the error rate for each of the three species, changes with the size of the forest (the number of trees).
 
-```{r rfoob, fig.cap="Out of bag error, and individual classification errors for the three species classes in the random forest model", fig.alt="This shows a plot with y-axis labelled 'Error' and x-axis labelled 'trees' and a legend containing species. 'OOB', 'versicolor' and 'virginica' variables show fluctuations in error at the beginning and middle but flatline towards the end of the plot, while 'setosa' has no error and is parallel with the x-axis."}
+```{r rfoob, fig.cap="Out of bag error, and individual classification errors for the three species classes in the random forest model", fig.alt="This figure shows a plot with y-axis labelled 'Error' and x-axis labelled 'trees'. The top right of the plot shows a legend with labels 'OOB', 'setosa', 'versicolor' and 'virginica' which are denoted by a black solid line, a red dashed line, a light green dotted line and a blue dotted and dashed line respectively. The 'OOB', 'versicolor' and 'virginica' variables show fluctuations in error at the beginning and middle of the plot but flatline towards the second half of the plot. The 'setosa' variable remains shows 0 error and is parallel with the x-axis."}
 plot(RF.model, main="")
 legend("topright", c("OOB", "setosa", "versicolor", "virginica"), col=c(1,2,3,4), lty=c(1,2,3,4), bty="n")
 
@@ -513,7 +494,7 @@ So we see little change in our error rate.
 
 Despite not yielding a single visualizable tree, we can get information about the random forest model. One metric is the relative importance of the predictors. By ranking predictors based on how much they influence the response, random forests may be a useful tool for selecting predictors before trying another framework, such as CART. Importance can be obtained and plotted using the **varImpPlotfunction()**:
 
-```{r vipp, echo=TRUE, fig.cap="Variable importance plot for our random forest model of the iris data", fig.alt="This shows a plot with y-axis containing variables of lengths and widths and x-axis labelled 'MeanDecreaseGini'. The 4 points on the graph for each y-axis variables shows, the mean decrease in Gini Index is  'Sepal.Width', 'Sepal.Length', 'Petal.Length', then 'Petal.Width'."}
+```{r vipp, echo=TRUE, fig.cap="Variable importance plot for our random forest model of the iris data", fig.alt="This figure shows a plot with title 'RF.model' that has y-axis with variables 'Petal.Width', 'Petal.Length', 'Sepal.Length' and 'Sepal.Width' from top to bottom and x-axis with label 'MeanDecreaseGini'. There are 4 points on the graph. Each point corresponds to one of the y-axis variables. The mean decrease in Gini Index is at the lowest for 'Sepal.Width' followed by 'Sepal.Length', then 'Petal.Length' and lastly is at the highest for 'Petal.Width'."}
 varImpPlot(RF.model) 
 ```
 
@@ -523,7 +504,7 @@ Variable importance reports the mean decrease in the Gini Index for each predict
 One other useful aspect of random forests is getting a sense of the partial effect of each predictor given the other predictors in the model. This has analogues to partial correlation plots in linear models. We can construct a partial effects response by holding each value of the predictor of interest constant (while allowing all other predictors to vary at their original values), passing it through the random forest, and predicting the responses. The average of the predicted responses are plotted against each value of the predictor of interest (the ones that were held constant) to see how the effect of that predictor changes based on its value. This exercise can be repeated for all other predictors to gain a sense of their partial effects.
 
 The function to calculate partial effects in the randomForest package is *partialPlot()*. Let’s look at the effect of Petal.Length:
-```{r PEplot, echo=TRUE, fig.cap="Partial effect of petal length in the random forest model of the iris data", fig.alt="This figure shows a plot with y-axis labelled 'log odds' and x-axis labelled 'Petal.Length' with a downwards trending line."}
+```{r PEplot, echo=TRUE, fig.cap="Partial effect of petal length in the random forest model of the iris data", fig.alt="This figure shows a plot with y-axis labelled 'log odds' and x-axis labelled 'Petal.Length'. The plot shows a line that begins where 'log odds' is highest and trends downwards as 'Petal.Length' increases."}
 partialPlot(RF.model, iris, "Petal.Length", main="", ylab="log odds") 
 ```
 
@@ -605,7 +586,7 @@ The activation functions are used to map the input between the required values. 
 
 Of course, like a human brain, there is more than on neuron in a network, so we have have a *layer* of neurons. In Fig \@ref(fig:ann) we have a **feedforward neural network** where the information moves only in one direction, forward from input to output. The ANN consists of 2 inputs, 1 hidden layer with 3 hidden neurons, and 1 final output. The layers between input and output are called "hidden" because you do not see what they are doing, even though this is where all the processing happens. We could have decided to add another intermediate hidden layer between the input and the final output exactly in the same way. Then we would have had a neural network with 2 hidden layers. Or we could have chosen to stay with 1 hidden layer but to have more neurons in it (5 instead of 3, for example).The parallel processing of information by many neurons allows ANNs to deal with non-linearity easily. Not all the neural networks fit the template described above. There are different kinds of architectures, but the feedforward neural network (also called Multi Layer Perceptron) is really the first basic architecture to understand. 
 
-```{r ann, fig.cap="Diagram of an artificial neural network", fig.alt="Artificial neural network showing connections between inputs to hidden layer to output.", echo=FALSE}
+```{r ann, fig.cap="Diagram of an artificial neural network", fig.alt="Artificial neural network", echo=FALSE}
 plot(0,type='n',axes=FALSE,ann=FALSE,xlim=c(-.05,.75), ylim=c(0,1.5))
 
 for (i in 1:3) {
@@ -798,7 +779,7 @@ We've used the caret package to run our random forest to classify the Pima diabe
 
 We use the fitted model to predict the test data, and then generate a confusion matrix to take a look at how well it does. We also examine which predictors are most important.
 
-```{r e4, echo=TRUE, fig.cap="Variable importance plot from the final random forest model selected by caret for the Pima.tr dataset", fig.alt="Variable importance is indicated by the mean decrease in the Gini index shown by plot labelled 'final random forest model from caret'.", comment="", message=FALSE}
+```{r e4, echo=TRUE, fig.cap="Variable importance plot from the final random forest model selected by caret for the Pima.tr dataset", fig.alt="Variable importance is indicated by the mean decrease in the Gini index", comment="", message=FALSE}
 library(randomForest)
 library(caret)
 #cross-validation with 5 folds
