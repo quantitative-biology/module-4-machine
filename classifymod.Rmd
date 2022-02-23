@@ -670,7 +670,7 @@ plot(nniris, rep="best", information=FALSE, intercept=FALSE)
 Finally, we'll generate a confusion matrix for our neural net to see how well it did. The **compute()** function gives us the probability of class membership, and we'll just select the species with the highest probability.
 ```{r, echo=FALSE, comment=""}
 #use to predict
-comp <-compute(nniris, iristest[-5])
+comp <-neuralnet::compute(nniris, iristest[-5])
 pred.weights <- comp$net.result
 idx <- apply(pred.weights, 1, which.max)
 pred <- c('setosa', 'versicolor', 'virginica')[idx]
