@@ -2,7 +2,6 @@
 
 ```{r setup, include=FALSE}
 rm(list=ls())
-knitr::opts_chunk$set(echo = FALSE,kableExtra.auto_format = FALSE)
 library(kableExtra)
 ```
 
